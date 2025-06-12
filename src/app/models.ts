@@ -1,5 +1,6 @@
 export interface User {
-  id: string;
+  id: string; // MongoDB _id (use this everywhere for backend API calls)
+  userId: string; // Custom userId (legacy, do not use for backend calls)
   name: string;
   email: string;
   role: string;
@@ -7,6 +8,20 @@ export interface User {
   bio?: string;
   location?: string;
   children?: Child[];
+  joinedGroups?: any[];
+  followers?: any[];
+  following?: any[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Add to models.ts
+export interface Comment {
+  _id: string;
+  comment: string;
+  authorName: string;
+  authorAvatar?: string;
+  createdAt: string;
 }
 
 export interface Child {
@@ -24,12 +39,13 @@ export interface Post {
   videoUrl?: string;
   images?: string[];
   likes?: string[];
-  comments?: { userId: string; comment: string; }[];
+  comments?: Comment[];
   category?: string;
   mediaType?: string;
   mediaUrl?: string;
   mediaSize?: number;
   postType?: string;
+  postId?:string;
 }
 
 export interface PostData {

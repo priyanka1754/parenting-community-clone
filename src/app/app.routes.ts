@@ -26,6 +26,10 @@ export const routes: Routes = [
     loadComponent: () => import('./feed/feed.component').then(m => m.FeedComponent)
   },
   {
+    path: 'feed-details/:id',
+    loadComponent: () => import('./feed-details/feed-details.component').then(m => m.FeedDetailsComponent)
+  },
+  {
     path: '',
     redirectTo: 'home',
     pathMatch: 'full'

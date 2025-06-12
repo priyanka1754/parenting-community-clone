@@ -1,8 +1,9 @@
-import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, of } from 'rxjs';
+import { map, tap, catchError } from 'rxjs/operators';
 import { User, Child } from './models';
+import { isPlatformBrowser } from '@angular/common';
 
 export interface RegisterRequest {
   name: string;
@@ -38,126 +39,103 @@ export class AuthService {
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
   public token$ = this.tokenSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {
     this.checkAuthStatus();
   }
 
-  
+  // ✅ On app load, check and fetch user if token exists
   private checkAuthStatus(): void {
-  if (typeof window !== 'undefined') {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
+    const token = this.getAuthToken();
 
-      if (!token) {
-        console.error('Token missing. Cannot make authorized request.');
-        return;
-      }
+    if (!token) {
+      this.logout();
+      return;
+    }
 
-    const user = localStorage.getItem('current_user');
-
-    if (token && user) {
-      try {
-        const userData = JSON.parse(user);
-        this.tokenSubject.next(token);
-        this.currentUserSubject.next(userData);
+    this.tokenSubject.next(token);
+    this.getProfile().subscribe({
+      next: (res) => {
+        this.currentUserSubject.next(res.user);
         this.isAuthenticatedSubject.next(true);
-      } catch (error) {
+      },
+      error: () => {
         this.logout();
       }
-    } else {
-      this.logout();
-    }
-  } else {
-    // Running on server - skip localStorage logic
-    this.tokenSubject.next(null);
-    this.currentUserSubject.next(null);
-    this.isAuthenticatedSubject.next(false);
-  }
-}
-
-
-  private isBrowser(): boolean {
-    return typeof window !== 'undefined';
+    });
   }
 
+  // ✅ Login and store token
   login(credentials: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`/api/parenting/users/login`, credentials).pipe(
       tap((response) => {
-        if (response.token && response.user && this.isBrowser()) {
-          localStorage.setItem('auth_token', response.token);
-          localStorage.setItem('current_user', JSON.stringify(response.user));
+        if (response.token) {
+          if (isPlatformBrowser(this.platformId)) {
+            localStorage.setItem('auth_token', response.token);
+          }
           this.tokenSubject.next(response.token);
-          this.currentUserSubject.next(response.user);
-          this.isAuthenticatedSubject.next(true);
+          this.getProfile().subscribe({
+            next: (res) => {
+              this.currentUserSubject.next(res.user);
+              this.isAuthenticatedSubject.next(true);
+            },
+            error: () => this.logout()
+          });
         }
       })
     );
   }
 
+  // ✅ Register user
   register(userData: RegisterRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`/api/parenting/users/register`, userData);
   }
 
+  // ✅ Logout and reset all state
   logout(): void {
-    if (this.isBrowser()) {
+    if (isPlatformBrowser(this.platformId)) {
       localStorage.removeItem('auth_token');
-      localStorage.removeItem('current_user');
     }
     this.tokenSubject.next(null);
     this.currentUserSubject.next(null);
     this.isAuthenticatedSubject.next(false);
+  }
+
+  // ✅ Public API to get current user
+  get currentUser(): User | null {
+    return this.currentUserSubject.value;
   }
 
   get isAuthenticated(): boolean {
     return this.isAuthenticatedSubject.value;
   }
 
-  get currentUser(): User | null {
-    return this.currentUserSubject.value;
-  }
-
-  get token(): string | null {
-    return this.tokenSubject.value;
-  }
-
-  getCurrentUser(): Observable<User | null> {
-    return this.currentUser$;
-  }
-
   getAuthToken(): string | null {
-    return localStorage.getItem('auth_token');
+    if (isPlatformBrowser(this.platformId)) {
+      return localStorage.getItem('auth_token');
+    }
+    return null;
   }
 
-  // Method to refresh user data
+  // ✅ Refresh user data from backend
   refreshUserData(): Observable<User> {
-    const token = this.getAuthToken();
-    if (!token) {
-      throw new Error('No auth token found');
-    }
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
-    return this.http.get<{ success: boolean; user: User }>(`/me`, { headers }).pipe(
-      map((response) => response.user),
+    return this.getProfile().pipe(
+      map((res) => res.user),
       tap((user) => {
-        localStorage.setItem('current_user', JSON.stringify(user));
         this.currentUserSubject.next(user);
       })
     );
   }
 
-  // Method to update user profile
+  // ✅ Get full profile from backend
+  getProfile(): Observable<{ success: boolean; user: User }> {
+    return this.http.get<{ success: boolean; user: User }>(`/api/parenting/users/profile`);
+  }
+
+  // ✅ Update user profile
   updateProfile(userData: Partial<User>): Observable<User> {
-    const token = this.getAuthToken();
-    if (!token) {
-      throw new Error('No auth token found');
-    }
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-    });
-    return this.http.put<{ success: boolean; user: User }>(`/profile`, userData, { headers }).pipe(
-      map((response) => response.user),
+    return this.http.put<{ success: boolean; user: User }>(`/api/parenting/users/profile`, userData).pipe(
+      map((res) => res.user),
       tap((user) => {
-        localStorage.setItem('current_user', JSON.stringify(user));
         this.currentUserSubject.next(user);
       })
     );

@@ -44,30 +44,27 @@
       </div>
     </div>
 
-    <!-- Post Content -->
-    <div class="mb-4">
+    <!-- Post Content (truncated) -->
+    <div class="mb-4 cursor-pointer" (click)="openPostDetails(post)">
       <div *ngIf="post.content" class="text-gray-700 whitespace-pre-line leading-relaxed">
-        {{ post.content }}
+        {{ post.content | slice:0:120 }}<span *ngIf="post.content.length > 120">...</span>
       </div>
     </div>
 
-    <!-- Media Section -->
-    <div *ngIf="post.imageUrl || post.videoUrl" class="mb-4">
-      <!-- Image -->
+    <!-- Media Section (show only image/video preview, optional) -->
+    <div *ngIf="post.imageUrl || post.videoUrl" class="mb-4 cursor-pointer" (click)="openPostDetails(post)">
       <div *ngIf="post.imageUrl" class="relative">
         <img 
           [src]="post.imageUrl" 
-          class="w-full rounded-xl object-cover max-h-96 border border-gray-200" 
+          class="w-full rounded-xl object-cover max-h-60 border border-gray-200" 
           alt="Post Image"
           (error)="onImageError($event)"
         />
       </div>
-      
-      <!-- Video -->
       <div *ngIf="post.videoUrl" class="relative">
         <video 
           controls 
-          class="w-full rounded-xl max-h-96 border border-gray-200"
+          class="w-full rounded-xl max-h-60 border border-gray-200"
           preload="metadata"
         >
           <source [src]="post.videoUrl" type="video/mp4" />
@@ -91,17 +88,35 @@
 
     <!-- Action Buttons with FontAwesome Icons -->
     <div class="flex justify-between items-center">
-      <button class="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
-        <i class="fa-solid fa-thumbs-up"></i>
-        <span class="text-sm font-medium">Like</span>
+      <!-- Like Button -->
+      <button
+        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200"
+        [ngClass]="hasLiked(post) ? 'bg-green-600 text-white' : 'bg-orange-500 text-white'"
+        [disabled]="hasLiked(post) || isLiking[post.postId!]"
+        (click)="likePost(post)"
+      >
+        <span *ngIf="!hasLiked(post)">👍</span>
+        <span *ngIf="hasLiked(post)">✅</span>
+        <span class="font-medium">Like</span>
+        <span *ngIf="hasLiked(post)" class="ml-1 text-xs">(Liked by you)</span>
+        <span class="ml-2 font-bold">{{ post.likes?.length || 0 }}</span>
       </button>
-      <button class="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
+      <!-- Snackbar for Like Feedback -->
+      <div *ngIf="showLikeSnackbar[post.postId!]" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50 transition">
+        Please log in to like this post.
+      </div>
+      <!-- Comment Button -->
+      <button class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium"
+        (click)="commentOnPost(post)">
         <i class="fas fa-comment text-sm"></i>
-        <span class="text-sm font-medium">Comment</span>
+        <span>Comment</span>
+        <span class="ml-2 font-bold">{{ post.comments?.length || 0 }}</span>
       </button>
-      <button class="flex items-center space-x-2 px-4 py-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200">
+      <!-- Share Button -->
+      <button class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium"
+        (click)="sharePost(post)">
         <i class="fa-solid fa-share-from-square"></i>
-        <span class="text-sm font-medium">Share</span>
+        <span>Share</span>
       </button>
     </div>
   </div>
