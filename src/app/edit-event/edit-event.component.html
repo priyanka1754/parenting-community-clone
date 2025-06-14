@@ -1,0 +1,71 @@
+<div class="max-w-2xl mx-auto p-4">
+  <h2 class="text-2xl font-bold mb-4">Edit Event</h2>
+  <form *ngIf="event" (ngSubmit)="onSubmit()" #editForm="ngForm" class="space-y-4">
+    <div>
+      <label class="block font-semibold">Title *</label>
+      <input type="text" name="title" [(ngModel)]="event.title" required class="input input-bordered w-full" />
+    </div>
+    <div>
+      <label class="block font-semibold">Description *</label>
+      <textarea name="description" [(ngModel)]="event.description" required class="input input-bordered w-full"></textarea>
+    </div>
+    <div class="flex gap-4">
+      <div class="flex-1">
+        <label class="block font-semibold">Date *</label>
+        <input type="date" name="date" [(ngModel)]="event.date" required class="input input-bordered w-full" />
+      </div>
+      <div class="flex-1">
+        <label class="block font-semibold">Time *</label>
+        <input type="time" name="time" [(ngModel)]="event.time" required class="input input-bordered w-full" />
+      </div>
+    </div>
+    <div>
+      <label class="block font-semibold">Event Type *</label>
+      <select name="eventType" [(ngModel)]="event.eventType" required class="input input-bordered w-full">
+        <option value="Online">Online</option>
+        <option value="Offline">Offline</option>
+      </select>
+    </div>
+    <div *ngIf="event.eventType === 'Online'">
+      <label class="block font-semibold">Meeting Link *</label>
+      <input type="url" name="meetingLink" [(ngModel)]="event.meetingLink" required class="input input-bordered w-full" />
+    </div>
+    <div *ngIf="event.eventType === 'Offline'">
+      <label class="block font-semibold">Location *</label>
+      <input type="text" name="location" [(ngModel)]="event.location" required class="input input-bordered w-full" />
+    </div>
+    <div>
+      <label class="block font-semibold">Category *</label>
+      <select name="category" [(ngModel)]="event.category" required class="input input-bordered w-full">
+        <option value="Baby Shower">Baby Shower</option>
+        <option value="Webinar">Webinar</option>
+        <option value="Workshop">Workshop</option>
+        <option value="Meetup">Meetup</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div>
+      <label class="block font-semibold">Max Attendees</label>
+      <input type="number" name="maxAttendees" [(ngModel)]="event.maxAttendees" min="1" class="input input-bordered w-full" />
+    </div>
+    <div>
+      <label class="block font-semibold">Visibility *</label>
+      <select name="visibility" [(ngModel)]="event.visibility" required class="input input-bordered w-full">
+        <option value="Public">Public</option>
+        <option value="Private">Private</option>
+        <option value="Group-only">Group-only</option>
+      </select>
+    </div>
+    <div>
+      <label class="block font-semibold">Cover Image</label>
+      <input type="file" (change)="onFileChange($event)" accept="image/*" class="input input-bordered w-full" />
+    </div>
+    <button type="submit" class="btn btn-primary w-full" [disabled]="editForm.invalid || loading">
+      {{ loading ? 'Saving...' : 'Save Changes' }}
+    </button>
+    <div *ngIf="error" class="text-red-500 mt-2">{{ error }}</div>
+    <div *ngIf="success" class="text-green-600 mt-2">Event updated successfully!</div>
+  </form>
+  <div *ngIf="!event && !loading && error" class="text-red-500 text-center">{{ error }}</div>
+  <div *ngIf="loading" class="text-center py-8">Loading event...</div>
+</div>

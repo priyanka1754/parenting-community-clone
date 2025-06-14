@@ -69,3 +69,56 @@ export interface UploadResponse {
   url: string;
   message: string;
 }
+
+export interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string; // ISO string
+  time: string; // e.g. '14:00'
+  coverImageUrl?: string;
+  eventType: 'Online' | 'Offline';
+  location?: string;
+  meetingLink?: string;
+  category: string;
+  maxAttendees?: number;
+  visibility: 'Public' | 'Private' | 'Group-only';
+  host: User;
+  attendees: RSVP[];
+  createdAt: string;
+  updatedAt: string;
+  isCancelled?: boolean;
+  rsvpCount?: number;
+  comments?: EventComment[];
+}
+
+export interface EventData {
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  coverImageUrl?: string;
+  eventType: 'Online' | 'Offline';
+  location?: string;
+  meetingLink?: string;
+  category: string;
+  maxAttendees?: number;
+  visibility: 'Public' | 'Private' | 'Group-only';
+}
+
+export interface RSVP {
+  userId: string;
+  status: 'Going' | 'Interested' | 'Not Going';
+  respondedAt: string;
+}
+
+export interface EventComment {
+  _id: string;
+  eventId: string;
+  userId: string;
+  comment: string;
+  authorName: string;
+  authorAvatar?: string;
+  createdAt: string;
+  replies?: EventComment[];
+}
