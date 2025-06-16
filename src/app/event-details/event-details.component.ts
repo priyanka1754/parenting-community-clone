@@ -164,8 +164,9 @@ export class EventDetailsComponent implements OnInit {
   getFullMediaUrl(mediaUrl: string): string {
     if (!mediaUrl) return '';
     if (mediaUrl.startsWith('http')) return mediaUrl;
-    if (mediaUrl.startsWith('/uploads')) return `${mediaUrl}`;
-    return `/${mediaUrl.startsWith('uploads') ? mediaUrl : 'uploads/' + mediaUrl}`;
+    if (mediaUrl.startsWith('/uploads')) return `http://localhost:3000${mediaUrl}`;
+    if (mediaUrl.startsWith('uploads')) return `http://localhost:3000/${mediaUrl}`;
+    return mediaUrl;
   }
 
   getHostAvatar(): string {

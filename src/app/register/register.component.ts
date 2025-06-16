@@ -163,4 +163,19 @@ export class RegisterComponent implements OnInit {
       });
     }
   }
+
+  getAvatarPreviewUrl(): string {
+    if (this.avatarPreview) {
+      if (this.avatarPreview.startsWith('/uploads/avatar')) {
+        return `http://localhost:3000${this.avatarPreview}`;
+      }
+      if (this.avatarPreview.startsWith('uploads/avatar')) {
+        return `http://localhost:3000/${this.avatarPreview}`;
+      }
+      if (this.avatarPreview.startsWith('http')) {
+        return this.avatarPreview;
+      }
+    }
+    return '';
+  }
 }

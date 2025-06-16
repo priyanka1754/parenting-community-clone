@@ -37,7 +37,7 @@
   <div *ngIf="!loading && events.length === 0" class="text-center py-8 text-gray-500">No events found.</div>
   <div class="grid gap-4">
     <div *ngFor="let event of events" class="border rounded-lg p-4 flex flex-col md:flex-row gap-4 bg-white shadow">
-      <img *ngIf="event.coverImageUrl" [src]="event.coverImageUrl" alt="cover" class="w-full md:w-40 h-32 object-cover rounded" />
+      <img *ngIf="event.coverImageUrl" [src]="getCoverImageUrl(event)" alt="cover" class="w-full md:w-40 h-32 object-cover rounded" />
       <div class="flex-1">
         <div class="flex items-center gap-2 mb-1">
           <span class="font-semibold text-lg">{{ event.title }}</span>
@@ -52,7 +52,7 @@
         </div>
         <div class="text-xs text-gray-400 mb-2">Category: {{ event.category }}</div>
         <div class="flex items-center gap-2 mb-2">
-          <img [src]="(event.host && event.host.avatar) ? event.host.avatar : '/assets/user-img.png'" class="w-6 h-6 rounded-full" />
+          <img [src]="(event.host && event.host.avatar) ? getHostAvatarUrl(event.host.avatar) : '/assets/user-img.png'" class="w-6 h-6 rounded-full" />
           <span class="text-sm">{{ event.host && event.host.name ? event.host.name : 'Unknown' }}</span>
         </div>
         <div class="flex items-center gap-4 text-xs text-gray-600">

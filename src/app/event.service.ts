@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Event, EventData, RSVP, EventComment } from './models';
+import { map } from 'rxjs/operators';
 
 @Injectable({ providedIn: 'root' })
 export class EventService {
@@ -13,7 +14,12 @@ export class EventService {
   }
 
   getEvents(params: any = {}): Observable<Event[]> {
-    return this.http.get<Event[]>(this.apiUrl, { params });
+    return this.http.get<(Event & { _id?: string })[]>(this.apiUrl, { params }).pipe(
+      map(events => events.map(event => ({
+        ...event,
+        id: event.id || event._id // Map _id to id if needed
+      } as Event)))
+    );
   }
 
   getEventById(id: string): Observable<Event> {

@@ -30,6 +30,7 @@ export class EventsFeedComponent implements OnInit {
     if (this.filter.eventType) params.type = this.filter.eventType;
     this.eventService.getEvents(params).subscribe({
       next: (events) => {
+        console.log('Fetched events:', events); // Debug log to check host field
         this.events = events;
         this.sortEvents();
         this.loading = false;
@@ -62,5 +63,21 @@ export class EventsFeedComponent implements OnInit {
 
   goBack() {
     window.location.href = '/home';
+  }
+
+  getCoverImageUrl(event: any): string {
+    if (!event.coverImageUrl) return '';
+    if (event.coverImageUrl.startsWith('http')) return event.coverImageUrl;
+    if (event.coverImageUrl.startsWith('/uploads')) return `http://localhost:3000${event.coverImageUrl}`;
+    if (event.coverImageUrl.startsWith('uploads')) return `http://localhost:3000/${event.coverImageUrl}`;
+    return event.coverImageUrl;
+  }
+
+  getHostAvatarUrl(avatar: string): string {
+    if (!avatar) return '/assets/user-img.png';
+    if (avatar.startsWith('http')) return avatar;
+    if (avatar.startsWith('/uploads')) return `http://localhost:3000${avatar}`;
+    if (avatar.startsWith('uploads')) return `http://localhost:3000/${avatar}`;
+    return avatar;
   }
 }

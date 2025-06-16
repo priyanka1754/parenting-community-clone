@@ -191,4 +191,26 @@ export class PostCreationComponent implements OnInit {
       panelClass: ['error-snackbar']
     });
   }
+
+  getUserAvatarUrl(): string | null {
+    if (this.user && this.user.avatar) {
+      if (this.user.avatar.startsWith('/uploads/avatar')) {
+        return `http://localhost:3000${this.user.avatar}`;
+      }
+      if (this.user.avatar.startsWith('uploads/avatar')) {
+        return `http://localhost:3000/${this.user.avatar}`;
+      }
+      if (this.user.avatar.startsWith('http')) {
+        return this.user.avatar;
+      }
+    }
+    return null;
+  }
+
+  getAvatarInitials(name: string): string {
+    if (!name) return '';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
 }
