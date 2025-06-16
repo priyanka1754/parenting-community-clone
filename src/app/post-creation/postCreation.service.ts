@@ -46,7 +46,7 @@ export class PostService {
     const formData = new FormData();
     formData.append('avatar', file);
     // Use a dedicated endpoint for avatar uploads if available, else reuse /upload
-    return this.http.post<UploadResponse>(`/api/parenting/users/uploads/avatar`, formData);
+    return this.http.post<UploadResponse>(`/api/parenting/users/avatar`, formData);
   }
 
   getAllPosts(): Observable<any[]> {

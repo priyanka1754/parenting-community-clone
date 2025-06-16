@@ -10,19 +10,20 @@
     <div class="bg-white rounded-lg shadow-md p-6">
       <!-- User Info Section -->
       <div class="flex items-center mb-4" *ngIf="user">
-        <div class="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mr-3">
-          <img 
-            *ngIf="user.avatar" 
-            [src]="user.avatar" 
-            [alt]="user.name"
-            class="w-12 h-12 rounded-full object-cover"
-          >
-          <span 
-            *ngIf="!user.avatar" 
-            class="text-white font-semibold text-lg"
-          >
-            {{ user.name.charAt(0).toUpperCase() }}
-          </span>
+        <div class="w-12 h-12 rounded-full flex items-center justify-center mr-3"
+             [ngClass]="{'bg-blue-500': !getUserAvatarUrl(), 'overflow-hidden': !!getUserAvatarUrl()}" >
+          <ng-container *ngIf="getUserAvatarUrl(); else avatarInitials">
+            <img 
+              [src]="getUserAvatarUrl()" 
+              [alt]="user.name"
+              class="w-12 h-12 rounded-full object-cover"
+            >
+          </ng-container>
+          <ng-template #avatarInitials>
+            <span class="text-white font-semibold text-lg">
+              {{ getAvatarInitials(user.name) }}
+            </span>
+          </ng-template>
         </div>
         <div>
           <h3 class="font-semibold text-gray-900">{{ user.name }}</h3>

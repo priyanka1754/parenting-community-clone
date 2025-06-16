@@ -123,12 +123,26 @@ export class FeedComponent implements OnInit, OnDestroy {
     this.loadPosts();
   }
 
-  getUserAvatar(author: User): string {
+  getUserAvatar(author: User): string | null {
     if (author?.avatar && author.avatar.trim()) {
-      return author.avatar;
+      if (author.avatar.startsWith('/uploads/avatar')) {
+        return `http://localhost:3000${author.avatar}`;
+      }
+      if (author.avatar.startsWith('uploads/avatar')) {
+        return `http://localhost:3000/${author.avatar}`;
+      }
+      if (author.avatar.startsWith('http')) {
+        return author.avatar;
+      }
     }
-    const name = author?.name || 'Anonymous User';
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff&size=128`;
+    return null;
+  }
+
+  getAvatarInitials(name: string): string {
+    if (!name) return '';
+    const parts = name.trim().split(' ');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[1][0]).toUpperCase();
   }
 
   getDisplayName(author: User): string {

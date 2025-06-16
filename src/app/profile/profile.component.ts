@@ -67,4 +67,19 @@ export class ProfileComponent implements OnInit, OnDestroy {
   getAvatarInitials(name: string): string {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   }
+
+  getAvatarUrl(): string | null {
+    if (this.currentUser && this.currentUser.avatar) {
+      if (this.currentUser.avatar.startsWith('/uploads/avatar')) {
+        return `http://localhost:3000${this.currentUser.avatar}`;
+      }
+      if (this.currentUser.avatar.startsWith('uploads/avatar')) {
+        return `http://localhost:3000/${this.currentUser.avatar}`;
+      }
+      if (this.currentUser.avatar.startsWith('http')) {
+        return this.currentUser.avatar;
+      }
+    }
+    return null;
+  }
 }
