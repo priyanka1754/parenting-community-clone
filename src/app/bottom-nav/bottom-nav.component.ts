@@ -22,10 +22,10 @@ import { Subscription } from 'rxjs';
           <i class="fas fa-plus text-xl mb-1"></i>
           <span>Post</span>
         </a>
-        <div class="flex flex-col items-center text-gray-600 hover:text-blue-600">
+        <a [routerLink]="['/events']" [ngClass]="isActive('/events') ? 'text-blue-600' : 'text-gray-600'" class="flex flex-col items-center hover:text-blue-600">
           <i class="fas fa-calendar-alt text-xl mb-1"></i>
           <span>Events</span>
-        </div>
+        </a>
         <a [routerLink]="['/profile']" [ngClass]="isActive('/profile') ? 'text-blue-600' : 'text-gray-600'" class="flex flex-col items-center hover:text-blue-600">
           <i class="fas fa-user text-xl mb-1"></i>
           <span>Profile</span>

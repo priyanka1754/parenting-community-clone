@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -6,6 +6,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AuthService } from '../auth.service';
 import { PostService } from './postCreation.service';
 import { User, PostData } from '../models';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-post-creation',
@@ -18,6 +19,7 @@ export class PostCreationComponent implements OnInit {
   private snackBar = inject(MatSnackBar);
   private authService = inject(AuthService);
   private postService = inject(PostService);
+  constructor(@Inject(PLATFORM_ID) private platformId: Object) {}
 
   user: User | null = null;
   postContent: string = '';
@@ -40,19 +42,14 @@ export class PostCreationComponent implements OnInit {
   }
 
   loadUserData() {
-    this.authService.getCurrentUser().subscribe(
-      (user: User | null) => {
-        if (user) {
-          this.user = user;
-        } else {
-          this.router.navigate(['/login']);
-        }
-      },
-      (error: any) => {
-        console.error('Error loading user data:', error);
+    const user = this.authService.currentUser;
+    if (user) {
+      this.user = user;
+    } else {
+      if (isPlatformBrowser(this.platformId)) {
         this.router.navigate(['/login']);
       }
-    );
+    }
   }
 
   onFileSelect(event: Event, type: 'photo' | 'video') {
@@ -102,19 +99,23 @@ export class PostCreationComponent implements OnInit {
   }
 
   onPhotoClick() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.jpg,.jpeg,.png,.webp';
-    input.onchange = (e) => this.onFileSelect(e, 'photo');
-    input.click();
+    if (isPlatformBrowser(this.platformId)) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.jpg,.jpeg,.png,.webp';
+      input.onchange = (e) => this.onFileSelect(e, 'photo');
+      input.click();
+    }
   }
 
   onVideoClick() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.mp4';
-    input.onchange = (e) => this.onFileSelect(e, 'video');
-    input.click();
+    if (isPlatformBrowser(this.platformId)) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.mp4';
+      input.onchange = (e) => this.onFileSelect(e, 'video');
+      input.click();
+    }
   }
 
   onArticleClick() {

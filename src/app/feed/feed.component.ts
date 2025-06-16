@@ -1,10 +1,13 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { formatDistanceToNow } from 'date-fns';
 import { InfiniteScrollModule } from 'ngx-infinite-scroll';
 import { PostService } from '../post-creation/postCreation.service';
 import { Post, User } from '../models';
 import { Subscription } from 'rxjs';
+import { Router } from '@angular/router';
+import { AuthService } from '../auth.service';
+import { isPlatformBrowser } from '@angular/common';
 
 @Component({
   selector: 'app-feed',
@@ -19,10 +22,22 @@ export class FeedComponent implements OnInit, OnDestroy {
   limit = 5;
   hasNextPage = true;
   private postsSub?: Subscription;
+  likeStates: { [postId: string]: boolean } = {};
+  isLiking: { [postId: string]: boolean } = {};
+  showLikeSnackbar: { [postId: string]: boolean } = {};
+  currentUser: User | null = null;
+  isLoggedIn: boolean = false;
 
-  constructor(private postService: PostService) {}
+  constructor(
+    private postService: PostService,
+    private router: Router,
+    private authService: AuthService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {}
 
   ngOnInit() {
+    this.currentUser = this.authService.currentUser;
+    this.isLoggedIn = !!this.currentUser && !!this.currentUser.id;
     this.loadPosts();
   }
 
@@ -42,6 +57,7 @@ export class FeedComponent implements OnInit, OnDestroy {
             if (typeof post.authorId === 'object' && post.authorId !== null) {
               author = {
                 id: post.authorId._id || post.authorId.id || '',
+                userId: post.authorId.userId || '',
                 name: post.authorId.name || 'Unknown User',
                 email: post.authorId.email || '',
                 role: post.authorId.role || '',
@@ -53,6 +69,7 @@ export class FeedComponent implements OnInit, OnDestroy {
             } else {
               author = {
                 id: post.authorId || '',
+                userId: '',
                 name: 'Unknown User',
                 email: '',
                 role: '',
@@ -64,6 +81,7 @@ export class FeedComponent implements OnInit, OnDestroy {
             }
             return {
               id: post._id || post.id,
+              postId: post.postId, // Ensure postId is included in every post object
               author,
               content: post.content,
               createdAt: post.createdAt,
@@ -146,4 +164,56 @@ export class FeedComponent implements OnInit, OnDestroy {
   onImageError(event: any): void {
     event.target.src = 'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&size=128';
   }
+
+  openPostDetails(post: Post) {
+    // Always use postId for navigation
+    const postId = post.postId;
+    if (!postId) {
+      console.error('No postId found for post:', post);
+      return;
+    }
+    this.router.navigate(['/feed-details', postId]);
+  }
+
+  likePost(post: Post) {
+    if (!this.isLoggedIn) {
+      this.showLikeSnackbar[post.postId!] = true;
+      setTimeout(() => this.showLikeSnackbar[post.postId!] = false, 2000);
+      return;
+    }
+    if (!post.postId || !this.currentUser?.id || this.isLiking[post.postId!]) return;
+    this.isLiking[post.postId!] = true;
+    this.postService.likePost(post.postId, this.currentUser.id).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.likeStates[post.postId!] = response.liked;
+          post.likes = response.likes || [];
+        }
+        this.isLiking[post.postId!] = false;
+      },
+      error: () => {
+        this.isLiking[post.postId!] = false;
+      }
+    });
+  }
+
+  hasLiked(post: Post): boolean {
+    if (post.postId && post.likes && this.currentUser) {
+      return post.likes.some((id: string) => id === this.currentUser!.id);
+    }
+    return false;
+  }
+
+  commentOnPost(post: Post) {
+    this.router.navigate(['/feed-details', post.postId], { queryParams: { scrollToComments: 'true' } });
+  }
+
+  sharePost(post: Post) {
+    const textToShare = `Check out this post on SkipCry!\n\n"${post.content?.slice(0, 100)}..."\n\nRead more: ${location.origin}/feed-details/${post.postId}`;
+    const whatsappLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`;
+    if (isPlatformBrowser(this.platformId)) {
+      window.open(whatsappLink, '_blank');
+    }
+  }
 }
+// No direct API calls for userId in this file, mapping is already handled in author object.

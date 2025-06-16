@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { map, catchError } from 'rxjs/operators';
 import { PostData, CreatePostResponse, UploadResponse } from '../models';
 
 @Injectable({
@@ -10,56 +10,27 @@ import { PostData, CreatePostResponse, UploadResponse } from '../models';
 export class PostService {
   private http = inject(HttpClient);
   private apiUrl = `/api/parenting/posts`;
-  private backendUrl = 'http://localhost:3000'; // Add backend URL constant
 
-  private getHeaders(): HttpHeaders {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null;
-    if (!token) {
-      console.warn('No token found in localStorage!');
-      // Optional: redirect to login or return early
-    }
-   
-    return new HttpHeaders({
-      'Authorization': `Bearer ${token}`
-    });
-  }
-
-  // Helper method to get full media URL
+  // ✅ Safe media URL construction
   private getFullMediaUrl(mediaUrl: string): string {
     if (!mediaUrl) return '';
-    
-    // If URL already contains http/https, return as is
-    if (mediaUrl.startsWith('http')) {
-      return mediaUrl;
-    }
-    
-    // If URL starts with /uploads, prepend backend URL
-    if (mediaUrl.startsWith('/uploads')) {
-      return `${this.backendUrl}${mediaUrl}`;
-    }
-    
-    // If URL doesn't start with /, add it
-    return `${this.backendUrl}/${mediaUrl.startsWith('uploads') ? mediaUrl : 'uploads/' + mediaUrl}`;
+    if (mediaUrl.startsWith('http')) return mediaUrl;
+    if (mediaUrl.startsWith('/uploads')) return `${mediaUrl}`;
+    return `/${mediaUrl.startsWith('uploads') ? mediaUrl : 'uploads/' + mediaUrl}`;
   }
 
   createPost(postData: PostData): Observable<CreatePostResponse> {
-    return this.http.post<CreatePostResponse>(
-      this.apiUrl,
-      postData,
-      { headers: this.getHeaders() }
-    );
+    return this.http.post<CreatePostResponse>(this.apiUrl, postData);
   }
 
   getPaginatedPosts(page: number, limit: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}?page=${page}&limit=${limit}`, {
-      headers: this.getHeaders()
-    }).pipe(
+    return this.http.get<any>(`${this.apiUrl}?page=${page}&limit=${limit}`).pipe(
       map(response => ({
         ...response,
         posts: response.posts.map((post: any) => ({
           ...post,
-          // Fix media URLs
-          mediaUrl: this.getFullMediaUrl(post.mediaUrl)
+          mediaUrl: this.getFullMediaUrl(post.mediaUrl),
+          postId: post.postId
         }))
       }))
     );
@@ -68,39 +39,60 @@ export class PostService {
   uploadMedia(file: File): Observable<UploadResponse> {
     const formData = new FormData();
     formData.append('media', file);
+    return this.http.post<UploadResponse>(`${this.apiUrl}/upload`, formData);
+  }
 
-    return this.http.post<UploadResponse>(
-      `${this.apiUrl}/upload`,
-      formData,
-      { headers: this.getHeaders() }
-    );
+  uploadAvatar(file: File): Observable<UploadResponse> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    // Use a dedicated endpoint for avatar uploads if available, else reuse /upload
+    return this.http.post<UploadResponse>(`/api/parenting/users/uploads/avatar`, formData);
   }
 
   getAllPosts(): Observable<any[]> {
-    return this.http.get<any[]>(
-      this.apiUrl,
-      { headers: this.getHeaders() }
-    );
+    return this.http.get<any[]>(this.apiUrl);
   }
 
   getPostsByCategory(category: string): Observable<any[]> {
-    return this.http.get<any[]>(
-      `${this.apiUrl}/category/${category}`,
-      { headers: this.getHeaders() }
-    );
+    return this.http.get<any[]>(`${this.apiUrl}/category/${category}`);
   }
 
   getUserPosts(userId: string): Observable<any[]> {
-    return this.http.get<any[]>(
-      `${this.apiUrl}/user/${userId}`,
-      { headers: this.getHeaders() }
-    );
+    return this.http.get<any[]>(`${this.apiUrl}/user/${userId}`);
   }
 
   deletePost(postId: string): Observable<any> {
-    return this.http.delete(
-      `${this.apiUrl}/${postId}`,
-      { headers: this.getHeaders() }
+    return this.http.delete(`${this.apiUrl}/${postId}`);
+  }
+
+  getPostById(postId: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${postId}`);
+  }
+
+  // Update your likePost method in the service:
+  likePost(postId: string, userId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${postId}/like`, { userId }).pipe(
+      catchError(error => {
+        console.error('Like service error:', error);
+        return throwError(() => error);
+      })
     );
+  }
+
+  getLikeStatus(postId: string, userId: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${postId}/like-status/${userId}`);
+  }
+
+  addComment(postId: string, comment: string, userId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/${postId}/comment`, { content: comment, userId }).pipe(
+      catchError(error => {
+        console.error('Comment service error:', error);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  getComments(postId: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/${postId}/comments`);
   }
 }

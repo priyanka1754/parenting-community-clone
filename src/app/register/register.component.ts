@@ -6,24 +6,28 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService, RegisterRequest } from '../auth.service';
 import { Child } from '../models';
+import { PostService } from '../post-creation/postCreation.service';
 
 @Component({
   selector: 'app-register',
   imports: [ReactiveFormsModule,CommonModule],
   standalone: true,
   templateUrl: './register.component.html',
+  providers: []
 })
 export class RegisterComponent implements OnInit {
   registerForm: FormGroup;
   isLoading = false;
   showSuccessModal = false;
   errorMessage = '';
+  avatarPreview: string = '';
   
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private postService: PostService
   ) {
     this.registerForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
@@ -142,5 +146,21 @@ export class RegisterComponent implements OnInit {
       if (field.errors['min']) return `Age must be 0 or greater`;
     }
     return '';
+  }
+
+  onAvatarFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+      this.postService.uploadAvatar(file).subscribe({
+        next: (res) => {
+          this.registerForm.get('avatar')?.setValue(res.url);
+          this.avatarPreview = res.url;
+        },
+        error: () => {
+          this.errorMessage = 'Failed to upload avatar. Please try again.';
+        }
+      });
+    }
   }
 }

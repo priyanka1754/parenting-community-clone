@@ -1,5 +1,6 @@
 export interface User {
-  id: string;
+  id: string; // MongoDB _id (use this everywhere for backend API calls)
+  userId: string; // Custom userId (legacy, do not use for backend calls)
   name: string;
   email: string;
   role: string;
@@ -7,6 +8,20 @@ export interface User {
   bio?: string;
   location?: string;
   children?: Child[];
+  joinedGroups?: any[];
+  followers?: any[];
+  following?: any[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Add to models.ts
+export interface Comment {
+  _id: string;
+  comment: string;
+  authorName: string;
+  authorAvatar?: string;
+  createdAt: string;
 }
 
 export interface Child {
@@ -24,12 +39,13 @@ export interface Post {
   videoUrl?: string;
   images?: string[];
   likes?: string[];
-  comments?: { userId: string; comment: string; }[];
+  comments?: Comment[];
   category?: string;
   mediaType?: string;
   mediaUrl?: string;
   mediaSize?: number;
   postType?: string;
+  postId?:string;
 }
 
 export interface PostData {
@@ -52,4 +68,57 @@ export interface UploadResponse {
   success: boolean;
   url: string;
   message: string;
+}
+
+export interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string; // ISO string
+  time: string; // e.g. '14:00'
+  coverImageUrl?: string;
+  eventType: 'Online' | 'Offline';
+  location?: string;
+  meetingLink?: string;
+  category: string;
+  maxAttendees?: number;
+  visibility: 'Public' | 'Private' | 'Group-only';
+  host: User;
+  attendees: RSVP[];
+  createdAt: string;
+  updatedAt: string;
+  isCancelled?: boolean;
+  rsvpCount?: number;
+  comments?: EventComment[];
+}
+
+export interface EventData {
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  coverImageUrl?: string;
+  eventType: 'Online' | 'Offline';
+  location?: string;
+  meetingLink?: string;
+  category: string;
+  maxAttendees?: number;
+  visibility: 'Public' | 'Private' | 'Group-only';
+}
+
+export interface RSVP {
+  userId: string;
+  status: 'Going' | 'Interested' | 'Not Going';
+  respondedAt: string;
+}
+
+export interface EventComment {
+  _id: string;
+  eventId: string;
+  userId: string;
+  comment: string;
+  authorName: string;
+  authorAvatar?: string;
+  createdAt: string;
+  replies?: EventComment[];
 }
