@@ -1,104 +1,111 @@
 <!-- login.component.html -->
-<div class="min-h-screen bg-gray-50">
-  <!-- Header -->
-  <div class="bg-white shadow-sm px-4 py-3 flex items-center">
-    <button (click)="goBack()" class="mr-3 p-1">
-      <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-      </svg>
-    </button>
-    <h1 class="text-xl font-semibold text-gray-800">Sign In</h1>
-  </div>
+<ng-container *ngIf="!(authService.authLoading$ | async) && !authService.isAuthenticated; else loadingOrRedirect">
+  <div class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-white shadow-sm px-4 py-3 flex items-center">
+      <button (click)="goBack()" class="mr-3 p-1">
+        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+        </svg>
+      </button>
+      <h1 class="text-xl font-semibold text-gray-800">Sign In</h1>
+    </div>
 
-  <!-- Login Form -->
-  <div class="p-4 max-w-md mx-auto">
-    <div class="bg-white rounded-2xl shadow-lg p-8 mt-8">
-      <!-- Welcome Section -->
-      <div class="text-center mb-8">
-        <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-          <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-          </svg>
-        </div>
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome Back!</h2>
-        <p class="text-gray-600">Sign in to your account</p>
-      </div>
-
-      <!-- Login Form -->
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
-        <!-- Email -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
-          <input type="email" 
-                 formControlName="email"
-                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                 placeholder="Enter your email"
-                 [class.border-red-500]="getFieldError('email')">
-          <p *ngIf="getFieldError('email')" class="text-red-500 text-xs mt-1">{{ getFieldError('email') }}</p>
-        </div>
-
-        <!-- Password -->
-        <div>
-          <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
-          <div class="relative">
-            <input [type]="showPassword ? 'text' : 'password'" 
-                   formControlName="password"
-                   class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-                   placeholder="Enter your password"
-                   [class.border-red-500]="getFieldError('password')">
-            <button type="button" 
-                    (click)="togglePasswordVisibility()"
-                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
-              <svg *ngIf="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-              </svg>
-              <svg *ngIf="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
-              </svg>
-            </button>
-          </div>
-          <p *ngIf="getFieldError('password')" class="text-red-500 text-xs mt-1">{{ getFieldError('password') }}</p>
-        </div>
-
-        <!-- Error Message -->
-        <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 rounded-xl p-4">
-          <div class="flex items-center space-x-2">
-            <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+    <!-- Login Form -->
+    <div class="p-4 max-w-md mx-auto">
+      <div class="bg-white rounded-2xl shadow-lg p-8 mt-8">
+        <!-- Welcome Section -->
+        <div class="text-center mb-8">
+          <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+            <svg class="w-10 h-10 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
             </svg>
-            <p class="text-red-700 text-sm">{{ errorMessage }}</p>
           </div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome Back!</h2>
+          <p class="text-gray-600">Sign in to your account</p>
         </div>
 
-        <!-- Submit Button -->
-        <button type="submit" 
-                [disabled]="isLoading"
-                class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-medium py-4 px-4 rounded-xl transition-colors flex items-center justify-center space-x-2">
-          <svg *ngIf="isLoading" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <span>{{ isLoading ? 'Signing In...' : 'Sign In' }}</span>
-        </button>
-
-        <!-- Divider -->
-        <div class="relative">
-          <div class="absolute inset-0 flex items-center">
-            <div class="w-full border-t border-gray-300"></div>
+        <!-- Login Form -->
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+          <!-- Email -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+            <input type="email" 
+                   formControlName="email"
+                   class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                   placeholder="Enter your email"
+                   [class.border-red-500]="getFieldError('email')">
+            <p *ngIf="getFieldError('email')" class="text-red-500 text-xs mt-1">{{ getFieldError('email') }}</p>
           </div>
-          <div class="relative flex justify-center text-sm">
-            <span class="px-2 bg-white text-gray-500">Don't have an account?</span>
-          </div>
-        </div>
 
-        <!-- Register Link -->
-        <button type="button" 
-                (click)="navigateToRegister()"
-                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-xl transition-colors">
-          Create New Account
-        </button>
-      </form>
+          <!-- Password -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+            <div class="relative">
+              <input [type]="showPassword ? 'text' : 'password'" 
+                     formControlName="password"
+                     class="w-full px-4 py-3 pr-12 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+                     placeholder="Enter your password"
+                     [class.border-red-500]="getFieldError('password')">
+              <button type="button" 
+                      (click)="togglePasswordVisibility()"
+                      class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                <svg *ngIf="!showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                </svg>
+                <svg *ngIf="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L3 3m6.878 6.878L21 21"></path>
+                </svg>
+              </button>
+            </div>
+            <p *ngIf="getFieldError('password')" class="text-red-500 text-xs mt-1">{{ getFieldError('password') }}</p>
+          </div>
+
+          <!-- Error Message -->
+          <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 rounded-xl p-4">
+            <div class="flex items-center space-x-2">
+              <svg class="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+              </svg>
+              <p class="text-red-700 text-sm">{{ errorMessage }}</p>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" 
+                  [disabled]="isLoading"
+                  class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-blue-300 text-white font-medium py-4 px-4 rounded-xl transition-colors flex items-center justify-center space-x-2">
+            <svg *ngIf="isLoading" class="animate-spin w-5 h-5" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span>{{ isLoading ? 'Signing In...' : 'Sign In' }}</span>
+          </button>
+
+          <!-- Divider -->
+          <div class="relative">
+            <div class="absolute inset-0 flex items-center">
+              <div class="w-full border-t border-gray-300"></div>
+            </div>
+            <div class="relative flex justify-center text-sm">
+              <span class="px-2 bg-white text-gray-500">Don't have an account?</span>
+            </div>
+          </div>
+
+          <!-- Register Link -->
+          <button type="button" 
+                  (click)="navigateToRegister()"
+                  class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-xl transition-colors">
+            Create New Account
+          </button>
+        </form>
+      </div>
     </div>
   </div>
-</div>
+</ng-container>
+<ng-template #loadingOrRedirect>
+  <div class="flex items-center justify-center min-h-screen">
+    <div class="animate-spin rounded-full h-12 w-12 border-t-4 border-orange-500"></div>
+  </div>
+</ng-template>

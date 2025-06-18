@@ -3,7 +3,9 @@ import { EventService } from '../event.service';
 import { Event } from '../models';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { resolveImageUrl } from '../utils';
+import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-events-feed',
@@ -16,30 +18,60 @@ export class EventsFeedComponent implements OnInit {
   loading = false;
   filter = { category: '', eventType: '' };
   sortBy = 'date';
+  page = 1;
+  limit = 10;
+  allLoaded = false;
 
-  constructor(private eventService: EventService) {}
+  constructor(private eventService: EventService, private router: Router, private sanitizer: DomSanitizer) {}
 
   ngOnInit() {
+    this.events = [];
+    this.page = 1;
+    this.allLoaded = false;
     this.fetchEvents();
   }
 
-  fetchEvents() {
+  fetchEvents(loadMore: boolean = false) {
+    if (this.loading || this.allLoaded) return;
     this.loading = true;
-    const params: any = {};
+    const params: any = {
+      page: this.page,
+      limit: this.limit,
+    };
     if (this.filter.category) params.category = this.filter.category;
     if (this.filter.eventType) params.type = this.filter.eventType;
     this.eventService.getEvents(params).subscribe({
       next: (events) => {
-        console.log('Fetched events:', events); // Debug log to check host field
-        this.events = events;
+        if (loadMore) {
+          this.events = [...this.events, ...events];
+        } else {
+          this.events = events;
+        }
+        if (events.length < this.limit) this.allLoaded = true;
         this.sortEvents();
         this.loading = false;
       },
       error: () => {
         this.loading = false;
-        this.events = [];
+        if (!loadMore) this.events = [];
       }
     });
+    if (loadMore) this.page++;
+  }
+
+  onScroll() {
+    if (!this.loading && !this.allLoaded) {
+      this.page++;
+      this.fetchEvents(true);
+    }
+  }
+
+  onWindowScroll() {
+    const scrollPosition = window.innerHeight + window.scrollY;
+    const threshold = document.body.offsetHeight - 200;
+    if (scrollPosition >= threshold) {
+      this.onScroll();
+    }
   }
 
   sortEvents(sortBy: string = this.sortBy) {
@@ -62,22 +94,18 @@ export class EventsFeedComponent implements OnInit {
   }
 
   goBack() {
-    window.location.href = '/home';
+    this.router.navigate(['/home']);
   }
 
-  getCoverImageUrl(event: any): string {
-    if (!event.coverImageUrl) return '';
-    if (event.coverImageUrl.startsWith('http')) return event.coverImageUrl;
-    if (event.coverImageUrl.startsWith('/uploads')) return `http://localhost:3000${event.coverImageUrl}`;
-    if (event.coverImageUrl.startsWith('uploads')) return `http://localhost:3000/${event.coverImageUrl}`;
-    return event.coverImageUrl;
+  getCoverImageUrl(event: any): SafeUrl {
+    return this.sanitizer.bypassSecurityTrustUrl(resolveImageUrl(event.coverImageUrl, ''));
   }
 
-  getHostAvatarUrl(avatar: string): string {
-    if (!avatar) return '/assets/user-img.png';
-    if (avatar.startsWith('http')) return avatar;
-    if (avatar.startsWith('/uploads')) return `http://localhost:3000${avatar}`;
-    if (avatar.startsWith('uploads')) return `http://localhost:3000/${avatar}`;
-    return avatar;
+  getHostAvatarUrl(avatar?: string): SafeUrl {
+    return this.sanitizer.bypassSecurityTrustUrl(resolveImageUrl(avatar || '', '/assets/user-img.png'));
+  }
+
+  trackByEventId(index: number, event: Event) {
+    return event.id;
   }
 }

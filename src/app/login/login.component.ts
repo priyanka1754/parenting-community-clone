@@ -3,7 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService, LoginRequest } from '../auth.service';
 
 @Component({
@@ -20,8 +20,9 @@ export class LoginComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private authService: AuthService,
-    private router: Router
+    public authService: AuthService,
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -30,10 +31,12 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    // If already authenticated, redirect to profile
+    // Only redirect if already authenticated and currently on login page
     this.authService.isAuthenticated$.subscribe(isAuth => {
       if (isAuth) {
-        this.router.navigate(['/profile']);
+        // Get returnUrl from query params or default to /profile
+        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/profile';
+        this.router.navigate([returnUrl]);
       }
     });
   }
@@ -44,12 +47,12 @@ export class LoginComponent implements OnInit {
       this.errorMessage = '';
 
       const credentials: LoginRequest = this.loginForm.value;
-      
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/profile';
       this.authService.login(credentials).subscribe({
         next: (response) => {
           this.isLoading = false;
-          // Redirect to profile page after successful login
-          this.router.navigate(['/profile']);
+          // Redirect to returnUrl after successful login
+          this.router.navigate([returnUrl]);
         },
         error: (error) => {
           this.isLoading = false;

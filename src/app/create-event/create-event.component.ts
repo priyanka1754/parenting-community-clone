@@ -121,4 +121,15 @@ export class CreateEventComponent {
       }
     });
   }
+
+  goBack() {
+    this.router.navigate(['/events']);
+  }
+
+  autoResize(event: Event) {
+    const textarea = event.target as HTMLTextAreaElement;
+    textarea.style.height = 'auto';
+    const maxHeight = window.innerHeight / 4;
+    textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px';
+  }
 }

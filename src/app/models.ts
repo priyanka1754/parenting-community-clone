@@ -121,4 +121,5 @@ export interface EventComment {
   authorAvatar?: string;
   createdAt: string;
   replies?: EventComment[];
+  likes?: string[];
 }

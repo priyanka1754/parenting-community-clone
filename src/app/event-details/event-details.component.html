@@ -1,85 +1,153 @@
-<div class="max-w-2xl mx-auto p-4">
+<div class="max-w-2xl mx-auto p-4 bg-white rounded-lg shadow">
+  <button class="btn btn-link text-orange-600 mb-4 flex items-center" routerLink="/events">
+    <svg class="w-5 h-5 mr-1 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+    Back to Events
+  </button>
   <ng-container *ngIf="event; else loadingOrError">
-    <div class="flex flex-col md:flex-row gap-4">
-      <img *ngIf="event.coverImageUrl" [src]="getFullMediaUrl(event.coverImageUrl)" alt="cover" class="w-full md:w-56 h-40 object-cover rounded" />
-      <div class="flex-1">
-        <h1 class="text-2xl font-bold mb-2">{{ event.title }}</h1>
-        <div class="text-gray-600 mb-2">{{ event.description }}</div>
-        <div class="mb-2 flex flex-wrap gap-2 text-sm">
-          <span class="bg-gray-100 px-2 py-1 rounded">📅 {{ event.date | date:'mediumDate' }} {{ event.time }}</span>
-          <span class="bg-gray-100 px-2 py-1 rounded">{{ event.category }}</span>
-          <span class="bg-gray-100 px-2 py-1 rounded" *ngIf="event.eventType === 'Online'">Online</span>
-          <span class="bg-gray-100 px-2 py-1 rounded" *ngIf="event.eventType === 'Offline'">{{ event.location }}</span>
-          <span class="bg-gray-100 px-2 py-1 rounded" *ngIf="event.maxAttendees">Max: {{ event.maxAttendees }}</span>
-          <span class="bg-gray-100 px-2 py-1 rounded" *ngIf="event.visibility !== 'Public'">{{ event.visibility }}</span>
-          <span class="bg-red-100 text-red-600 px-2 py-1 rounded" *ngIf="event.isCancelled">Cancelled</span>
-          <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded" *ngIf="isEventFull(event)">Full</span>
-        </div>
-        <div class="flex items-center gap-2 mb-2">
-          <img [src]="getHostAvatar()" class="w-7 h-7 rounded-full" />
-          <span class="font-semibold">{{ event.host.name }}</span>
-          <span class="text-xs text-gray-400 ml-2">Host</span>
-        </div>
-        <div class="flex items-center gap-4 mb-2">
-          <span>RSVP: {{ getRSVPCount(event) }}</span>
-          <span *ngIf="event.eventType === 'Online' && isLive(event)">
-            <a [href]="event.meetingLink" target="_blank" class="btn btn-xs btn-success">Join Now</a>
-          </span>
-        </div>
-        <div class="flex gap-2 mt-2">
-          <button class="btn btn-primary btn-sm" [disabled]="rsvpLoading || event.isCancelled || isEventFull(event)" (click)="rsvp('Going')">
-            {{ rsvpStatus === 'Going' ? 'You are Going' : 'RSVP: Going' }}
+    <!-- Event Banner -->
+    <div *ngIf="event.coverImageUrl" class="mb-4">
+      <img [src]="getFullMediaUrl(event.coverImageUrl)" alt="cover" class="w-full h-56 object-cover rounded-lg border border-orange-100 shadow" />
+    </div>
+    <!-- Event Title -->
+    <h1 class="text-2xl font-bold mb-2 text-orange-700">{{ event.title }}</h1>
+    <!-- Event Details Modern Layout -->
+    <div class="bg-orange-50 rounded-lg p-4 mb-4 shadow border border-orange-100">
+      <div class="flex items-center mb-2">
+        <span class="font-semibold text-orange-700 mr-2">Host:</span>
+        <img [src]="getHostAvatar()" class="w-7 h-7 rounded-full border border-orange-200 mr-2" />
+        <span class="font-medium text-orange-700">{{ event.host.name }}</span>
+      </div>
+      <div class="mb-2">
+        <span class="font-semibold text-orange-700">Date & Time:</span>
+        <span class="text-orange-700 ml-1">{{ event.date | date:'mediumDate' }} {{ event.time }}</span>
+      </div>
+      <div class="mb-2">
+        <span class="font-semibold text-orange-700">Category:</span>
+        <span class="text-orange-700 ml-1">{{ event.category }}</span>
+      </div>
+      <div class="mb-2">
+        <span class="font-semibold text-orange-700">{{ event.eventType === 'Online' ? 'Meeting Link:' : 'Location:' }}</span>
+        <span class="text-orange-700 ml-1" *ngIf="event.eventType === 'Online'">
+          <a [href]="event.meetingLink" target="_blank" class="underline text-orange-600 hover:text-orange-800">{{ event.meetingLink }}</a>
+        </span>
+        <span class="text-orange-700 ml-1" *ngIf="event.eventType === 'Offline'">{{ event.location }}</span>
+      </div>
+      <div class="mb-2" *ngIf="event.maxAttendees">
+        <span class="font-semibold text-orange-700">Max Attendees:</span>
+        <span class="text-orange-700 ml-1">{{ event.maxAttendees }}</span>
+      </div>
+      <div class="mb-2">
+        <span class="font-semibold text-orange-700">RSVP:</span>
+        <span class="text-orange-700 ml-1">{{ getRSVPCount(event) }}</span>
+      </div>
+      <div class="flex flex-wrap gap-2 mt-2">
+        <span class="bg-red-100 text-red-600 px-2 py-1 rounded" *ngIf="event.isCancelled">Cancelled</span>
+        <span class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded" *ngIf="isEventFull(event)">Full</span>
+        <span class="bg-orange-100 px-2 py-1 rounded text-orange-700" *ngIf="event.visibility !== 'Public'">{{ event.visibility }}</span>
+      </div>
+    </div>
+    <!-- RSVP Section (only for non-hosts) -->
+    <div *ngIf="!isHost()" class="mb-4">
+      <ng-container *ngIf="!rsvpStatus; else rsvpGiven">
+        <div class="flex gap-4 mt-2">
+          <button class="px-6 py-2 rounded-lg text-base font-semibold border-2 border-orange-500 text-orange-700 bg-white shadow-sm transition-all duration-150 hover:bg-orange-100 focus:bg-orange-200 focus:text-orange-900"
+            [ngClass]="{'bg-orange-400 text-white border-orange-600 shadow-md': rsvpStatus === 'Going'}"
+            [disabled]="rsvpLoading || event.isCancelled || isEventFull(event)" (click)="rsvp('Going')">
+            {{ rsvpStatus === 'Going' ? 'You are Going' : 'Going' }}
           </button>
-          <button class="btn btn-outline btn-sm" [disabled]="rsvpLoading || event.isCancelled" (click)="rsvp('Interested')">
+          <button class="px-6 py-2 rounded-lg text-base font-semibold border-2 border-orange-400 text-orange-700 bg-white shadow-sm transition-all duration-150 hover:bg-orange-100 focus:bg-orange-200 focus:text-orange-900"
+            [ngClass]="{'bg-orange-300 text-white border-orange-500 shadow-md': rsvpStatus === 'Interested'}"
+            [disabled]="rsvpLoading || event.isCancelled" (click)="rsvp('Interested')">
             {{ rsvpStatus === 'Interested' ? 'You are Interested' : 'Interested' }}
           </button>
-          <button class="btn btn-outline btn-sm" [disabled]="rsvpLoading || event.isCancelled" (click)="rsvp('Not Going')">
-            Not Going
+          <button class="px-6 py-2 rounded-lg text-base font-semibold border-2 border-orange-300 text-orange-700 bg-white shadow-sm transition-all duration-150 hover:bg-orange-100 focus:bg-orange-200 focus:text-orange-900"
+            [ngClass]="{'bg-orange-200 text-white border-orange-400 shadow-md': rsvpStatus === 'Not Going'}"
+            [disabled]="rsvpLoading || event.isCancelled" (click)="rsvp('Not Going')">
+            {{ rsvpStatus === 'Not Going' ? 'Not Going' : 'Not Going' }}
           </button>
         </div>
-        <div *ngIf="rsvpError" class="text-red-500 mt-2">{{ rsvpError }}</div>
-        <div *ngIf="rsvpSuccess" class="text-green-600 mt-2">RSVP updated!</div>
+      </ng-container>
+      <ng-template #rsvpGiven>
+        <div class="flex items-center gap-2 mt-2">
+          <span class="bg-orange-200 text-orange-900 font-semibold px-3 py-1 rounded">You are {{ rsvpStatus }}</span>
+          <button class="btn btn-xs btn-outline ml-2 border-orange-500 text-orange-700 hover:bg-orange-50" (click)="editRSVP()">Edit</button>
+        </div>
+      </ng-template>
+      <div *ngIf="rsvpError" class="text-red-500 mt-2">{{ rsvpError }}</div>
+      <div *ngIf="rsvpSuccess" class="text-green-600 mt-2">RSVP updated!</div>
+    </div>
+    <!-- Toggle for Description/Comments as side-by-side tabs -->
+    <div class="flex mb-6 mt-4 border-b-2 border-orange-200">
+      <button (click)="activeTab = 'description'" [ngClass]="{'bg-orange-500 text-white': activeTab === 'description', 'bg-orange-50 text-orange-700': activeTab !== 'description'}" class="w-1/2 px-5 py-3 rounded-tl-lg font-semibold border-b-2 border-orange-500 focus:outline-none transition-all duration-150">Description</button>
+      <button (click)="activeTab = 'comments'" [ngClass]="{'bg-orange-500 text-white': activeTab === 'comments', 'bg-orange-50 text-orange-700': activeTab !== 'comments'}" class="w-1/2 px-5 py-3 rounded-tr-lg font-semibold border-b-2 border-orange-500 focus:outline-none transition-all duration-150">Comments</button>
+    </div>
+    <div *ngIf="activeTab === 'description'">
+      <!-- Event Description -->
+      <div class="mb-6">
+        <div class="text-gray-700 whitespace-pre-line">{{ event.description }}</div>
+      </div>
+      <!-- Feedback Section (unchanged) -->
+      <div *ngIf="canGiveFeedback()" class="mb-8">
+        <h3 class="font-semibold mb-2 text-orange-700">Post-event Feedback</h3>
+        <form class="flex flex-col gap-2 md:flex-row md:items-center" (ngSubmit)="submitFeedback()">
+          <div class="flex gap-1 mb-2 md:mb-0">
+            <button type="button" *ngFor="let emoji of feedbackEmojis" (click)="feedback.rating = emoji.value" [class.bg-orange-100]="feedback.rating === emoji.value" class="text-2xl rounded p-1">
+              {{ emoji.icon }}
+            </button>
+          </div>
+          <input [(ngModel)]="feedback.comment" name="feedbackComment" maxlength="200" class="input input-bordered flex-1 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 bg-orange-50 focus:bg-white" placeholder="Optional comment..." />
+          <button class="btn btn-primary ml-2 bg-orange-500 text-white hover:bg-orange-600" type="submit" [disabled]="feedbackLoading">Submit</button>
+        </form>
+        <div *ngIf="feedbackError" class="text-red-500 mt-2">{{ feedbackError }}</div>
+        <div *ngIf="feedbackSuccess" class="text-green-600 mt-2">Thank you for your feedback!</div>
+      </div>
+      <div *ngIf="feedbackList.length > 0" class="mb-8">
+        <h3 class="font-semibold mb-2 text-orange-700">Feedback from Attendees</h3>
+        <div *ngFor="let fb of feedbackList" class="flex items-center gap-2 mb-2">
+          <span class="text-xl">{{ getEmojiIcon(fb.rating) }}</span>
+          <span class="text-gray-700">{{ fb.comment }}</span>
+        </div>
       </div>
     </div>
-    <hr class="my-6" />
-    <div>
-      <h3 class="font-semibold mb-2">Comments & Q&amp;A</h3>
-      <form class="flex gap-2 mb-4" (ngSubmit)="addComment()">
-        <input [(ngModel)]="newComment" name="comment" required maxlength="300" class="input input-bordered flex-1" placeholder="Ask a question or comment..." />
-        <button class="btn btn-primary" type="submit" [disabled]="commentLoading">Post</button>
-      </form>
-      <div *ngIf="commentError" class="text-red-500 mb-2">{{ commentError }}</div>
-      <div *ngIf="comments.length === 0" class="text-gray-400">No comments yet.</div>
-      <div *ngFor="let c of comments" class="mb-3 p-2 bg-gray-50 rounded">
-        <div class="flex items-center gap-2 mb-1">
-          <img [src]="c.authorAvatar || '/assets/user-img.png'" class="w-5 h-5 rounded-full" />
-          <span class="font-semibold text-sm">{{ c.authorName }}</span>
-          <span class="text-xs text-gray-400 ml-2">{{ c.createdAt | date:'short' }}</span>
+    <div *ngIf="activeTab === 'comments'">
+      <div>
+        <h3 class="font-semibold mb-2 text-orange-700">Comments & Q&amp;A</h3>
+        <form class="flex gap-2 mb-4" (ngSubmit)="addComment()">
+          <textarea [(ngModel)]="newComment" name="comment" required maxlength="300" rows="1" class="input input-bordered flex-1 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 bg-orange-50 focus:bg-white text-base py-1.5 px-3 rounded min-h-[32px] max-h-[80px] resize-y" placeholder="Ask a question or comment..."></textarea>
+          <button class="btn btn-primary bg-orange-500 text-white hover:bg-orange-600 px-4 py-1.5 rounded text-base font-semibold" type="submit" [disabled]="commentLoading">Post</button>
+        </form>
+        <div *ngIf="commentError" class="text-red-500 mb-2">{{ commentError }}</div>
+        <div *ngIf="comments.length === 0" class="text-gray-400">No comments yet.</div>
+        <div *ngFor="let c of comments" class="mb-3 p-2 bg-orange-50 rounded">
+          <div class="flex items-center gap-2 mb-1">
+            <img [src]="getFullMediaUrl(c.authorAvatar || '') || '/assets/user-img.png'" class="w-5 h-5 rounded-full" />
+            <span class="font-semibold text-sm text-orange-700">{{ c.authorName }}</span>
+            <span class="text-xs text-gray-400 ml-2">{{ c.createdAt | date:'short' }}</span>
+          </div>
+          <div class="ml-7 text-sm">{{ c.comment }}</div>
+          <div class="ml-7 flex gap-4 mt-1">
+            <button class="flex items-center gap-1 text-orange-600 hover:underline text-sm font-medium" [disabled]="likeLoading[c._id]" (click)="likeComment(c._id)">
+              <i class="fas fa-thumbs-up"></i> Like <span *ngIf="c.likes && c.likes.length">{{ c.likes.length }}</span>
+            </button>
+            <button class="flex items-center gap-1 text-orange-600 hover:underline text-sm font-medium" (click)="toggleReply(c._id)">
+              <i class="fas fa-reply"></i> Reply
+            </button>
+          </div>
+          <div *ngIf="replyOpen[c._id]" class="ml-7 mt-2 flex gap-2">
+            <input [(ngModel)]="replyInputs[c._id]" class="input input-bordered flex-1 border-orange-200 focus:border-orange-500 focus:ring-2 focus:ring-orange-200 bg-orange-50 focus:bg-white text-sm py-1 px-2 rounded" placeholder="Write a reply..." />
+            <button class="btn btn-primary bg-orange-500 text-white hover:bg-orange-600 px-3 py-1 rounded text-sm font-semibold" (click)="postReply(c._id)">Post</button>
+          </div>
+          <div *ngIf="c.replies?.length" class="ml-10 mt-2">
+            <div *ngFor="let r of c.replies" class="mb-2">
+              <div class="flex items-center gap-2 mb-1">
+                <img [src]="getFullMediaUrl(r.authorAvatar || '') || '/assets/user-img.png'" class="w-4 h-4 rounded-full" />
+                <span class="font-semibold text-xs text-orange-700">{{ r.authorName }}</span>
+                <span class="text-xs text-gray-400 ml-2">{{ r.createdAt | date:'short' }}</span>
+              </div>
+              <div class="ml-6 text-xs">{{ r.comment }}</div>
+            </div>
+          </div>
         </div>
-        <div class="ml-7 text-sm">{{ c.comment }}</div>
-      </div>
-    </div>
-    <hr class="my-6" />
-    <!-- Feedback Section -->
-    <div *ngIf="canGiveFeedback()" class="mb-8">
-      <h3 class="font-semibold mb-2">Post-event Feedback</h3>
-      <form class="flex flex-col gap-2 md:flex-row md:items-center" (ngSubmit)="submitFeedback()">
-        <div class="flex gap-1 mb-2 md:mb-0">
-          <button type="button" *ngFor="let emoji of feedbackEmojis" (click)="feedback.rating = emoji.value" [class.bg-blue-100]="feedback.rating === emoji.value" class="text-2xl rounded p-1">
-            {{ emoji.icon }}
-          </button>
-        </div>
-        <input [(ngModel)]="feedback.comment" name="feedbackComment" maxlength="200" class="input input-bordered flex-1" placeholder="Optional comment..." />
-        <button class="btn btn-primary ml-2" type="submit" [disabled]="feedbackLoading">Submit</button>
-      </form>
-      <div *ngIf="feedbackError" class="text-red-500 mt-2">{{ feedbackError }}</div>
-      <div *ngIf="feedbackSuccess" class="text-green-600 mt-2">Thank you for your feedback!</div>
-    </div>
-    <div *ngIf="feedbackList.length > 0" class="mb-8">
-      <h3 class="font-semibold mb-2">Feedback from Attendees</h3>
-      <div *ngFor="let fb of feedbackList" class="flex items-center gap-2 mb-2">
-        <span class="text-xl">{{ getEmojiIcon(fb.rating) }}</span>
-        <span class="text-gray-700">{{ fb.comment }}</span>
       </div>
     </div>
   </ng-container>

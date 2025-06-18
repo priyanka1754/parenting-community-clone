@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { EventService } from '../event.service';
+import { AuthService } from '../auth.service';
 import { Event, EventComment } from '../models';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -38,17 +39,51 @@ export class EventDetailsComponent implements OnInit {
   feedbackSuccess = false;
   feedbackList: any[] = [];
 
-  constructor(private route: ActivatedRoute, private eventService: EventService) {}
+  activeTab: 'description' | 'comments' = 'description';
+
+  // Track reply input and open state for each comment
+  replyInputs: { [commentId: string]: string } = {};
+  replyOpen: { [commentId: string]: boolean } = {};
+  likeLoading: { [commentId: string]: boolean } = {};
+
+  constructor(private route: ActivatedRoute, private eventService: EventService, private authService: AuthService) {}
 
   ngOnInit() {
-    const id = this.route.snapshot.paramMap.get('id')!;
+    const id = this.route.snapshot.paramMap.get('id');
+    if (!id || id === 'undefined') {
+      this.error = 'Invalid event ID.';
+      this.loading = false;
+      return;
+    }
     this.eventService.getEventById(id).subscribe({
       next: (event) => {
         this.event = event;
         this.loading = false;
-        this.fetchComments();
-        this.fetchFeedback();
-        // Optionally fetch RSVP status for current user here
+        if (this.event && this.event.id) {
+          // Set RSVP status for current user
+          const userId = this.authService.currentUser?.id || '';
+          console.log('Current userId:', userId);
+          console.log('Attendees:', this.event.attendees);
+          console.log('Attendees userIds:', this.event.attendees?.map(a => a.userId));
+          const myRSVP = this.event.attendees?.find(a => {
+            let attendeeId = a.userId;
+            let match = false;
+            if (typeof attendeeId === 'string') {
+              match = attendeeId === userId;
+            } else if (attendeeId && typeof attendeeId === 'object') {
+              if ('_id' in attendeeId) match = (attendeeId as any)._id === userId;
+              else if ('$oid' in attendeeId) match = (attendeeId as any).$oid === userId;
+            }
+            console.log('Comparing', attendeeId, 'to', userId, '->', match);
+            return match;
+          });
+          console.log('Detected myRSVP:', myRSVP);
+          this.rsvpStatus = myRSVP ? myRSVP.status : null;
+          this.fetchComments();
+          this.fetchFeedback();
+        } else {
+          this.error = 'Event data is invalid (missing ID).';
+        }
       },
       error: (err) => {
         this.error = err.error?.message || 'Event not found.';
@@ -78,11 +113,24 @@ export class EventDetailsComponent implements OnInit {
     this.rsvpLoading = true;
     this.rsvpError = '';
     this.rsvpSuccess = false;
+    const userId = this.authService.currentUser?.id || '';
     this.eventService.rsvpEvent(this.event.id, status).subscribe({
       next: () => {
         this.rsvpStatus = status;
         this.rsvpSuccess = true;
-        // Optionally update event.attendees here
+        // Update event.attendees for current user
+        if (!Array.isArray(this.event!.attendees)) this.event!.attendees = [];
+        let attendee = this.event!.attendees.find(a => {
+          if (typeof a.userId === 'string') return a.userId === userId;
+          if (a.userId && typeof a.userId === 'object' && '_id' in a.userId) return (a.userId as any)._id === userId;
+          return false;
+        });
+        if (attendee) {
+          attendee.status = status;
+          attendee.respondedAt = new Date().toISOString();
+        } else {
+          this.event!.attendees.push({ userId, status, respondedAt: new Date().toISOString() });
+        }
         this.rsvpLoading = false;
       },
       error: (err) => {
@@ -134,6 +182,7 @@ export class EventDetailsComponent implements OnInit {
     this.feedbackLoading = true;
     this.feedbackError = '';
     this.feedbackSuccess = false;
+    // Send 'comment' as the field name for feedback
     this.eventService.addFeedback(this.event.id, this.feedback.rating, this.feedback.comment).subscribe({
       next: () => {
         this.feedbackSuccess = true;
@@ -162,7 +211,7 @@ export class EventDetailsComponent implements OnInit {
   }
 
   getFullMediaUrl(mediaUrl: string): string {
-    if (!mediaUrl) return '';
+    if (!mediaUrl) return '/assets/user-img.png'; // fallback for missing images
     if (mediaUrl.startsWith('http')) return mediaUrl;
     if (mediaUrl.startsWith('/uploads')) return `http://localhost:3000${mediaUrl}`;
     if (mediaUrl.startsWith('uploads')) return `http://localhost:3000/${mediaUrl}`;
@@ -170,7 +219,77 @@ export class EventDetailsComponent implements OnInit {
   }
 
   getHostAvatar(): string {
-    if (!this.event?.host?.avatar) return '';
+    if (!this.event?.host?.avatar) return '/assets/user-img.png'; // fallback avatar
     return this.getFullMediaUrl(this.event.host.avatar);
+  }
+
+  isHost(): boolean {
+    if (!this.event || !this.event.host) return false;
+    if (typeof window === 'undefined') return false; // Prevent SSR error
+    const userId = (window as any).currentUserId || '';
+    return this.event.host.id === userId;
+  }
+
+  editRSVP() {
+    // Allow user to change RSVP by resetting rsvpStatus
+    this.rsvpStatus = null;
+    this.rsvpSuccess = false;
+  }
+
+  toggleReply(commentId: string) {
+    this.replyOpen[commentId] = !this.replyOpen[commentId];
+    if (!this.replyOpen[commentId]) this.replyInputs[commentId] = '';
+  }
+
+  postReply(commentId: string) {
+    if (!this.event || !this.replyInputs[commentId]?.trim()) return;
+    const replyText = this.replyInputs[commentId];
+    this.eventService.replyToComment(this.event.id, commentId, replyText).subscribe({
+      next: (reply) => {
+        const comment = this.comments.find(c => c._id === commentId);
+        if (comment) {
+          comment.replies = comment.replies || [];
+          comment.replies.push(reply);
+        }
+        this.replyInputs[commentId] = '';
+        this.replyOpen[commentId] = false;
+      },
+      error: (err) => {
+        // Optionally show error
+      }
+    });
+  }
+
+  likeComment(commentId: any) {
+    // Support both string and object (MongoDB $oid) commentId
+    let resolvedId = commentId;
+    if (commentId && typeof commentId === 'object' && ('$oid' in commentId)) {
+      resolvedId = commentId.$oid;
+    }
+    console.log('Liking comment with ID:', resolvedId); // Debug log
+    if (!this.event) return;
+    this.likeLoading[resolvedId] = true;
+    this.eventService.likeComment(this.event.id, resolvedId).subscribe({
+      next: ({ liked, likesCount }) => {
+        const comment = this.comments.find(c => {
+          if (typeof c._id === 'string') return c._id === resolvedId;
+          if (c._id && typeof c._id === 'object' && ('$oid' in c._id)) return (c._id as any).$oid === resolvedId;
+          return false;
+        });
+        if (comment) {
+          comment.likes = comment.likes || [];
+          const userId = (window as any).currentUserId || '';
+          if (liked) {
+            comment.likes.push(userId);
+          } else {
+            comment.likes = comment.likes.filter(id => id !== userId);
+          }
+        }
+        this.likeLoading[resolvedId] = false;
+      },
+      error: () => {
+        this.likeLoading[resolvedId] = false;
+      }
+    });
   }
 }

@@ -34,35 +34,139 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
   private tokenSubject = new BehaviorSubject<string | null>(null);
+  private authLoadingSubject = new BehaviorSubject<boolean>(true);
 
   public currentUser$ = this.currentUserSubject.asObservable();
   public isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
   public token$ = this.tokenSubject.asObservable();
+  public authLoading$ = this.authLoadingSubject.asObservable();
+
+  private PROFILE_CACHE_KEY = 'user_profile_cache';
 
   constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {
-    this.checkAuthStatus();
+    // this.checkAuthStatus();
+  }
+
+  // Utility: Decode JWT and check expiry
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (!payload.exp) return true;
+      // exp is in seconds
+      return Date.now() >= payload.exp * 1000;
+    } catch {
+      return true;
+    }
+  }
+
+  // Utility: Get profile cache with timestamp
+  private getProfileCacheWithTimestamp(): { user: User, cachedAt: number } | null {
+    if (isPlatformBrowser(this.platformId)) {
+      const cached = localStorage.getItem(this.PROFILE_CACHE_KEY);
+      if (cached) {
+        try {
+          return JSON.parse(cached);
+        } catch {
+          return null;
+        }
+      }
+    }
+    return null;
+  }
+
+  // Override setProfileCache to include timestamp
+  private setProfileCache(user: User) {
+    if (isPlatformBrowser(this.platformId)) {
+      const cache = { user, cachedAt: Date.now() };
+      localStorage.setItem(this.PROFILE_CACHE_KEY, JSON.stringify(cache));
+    }
+  }
+
+  // Only use cached profile if token is valid and cache is fresh (<1 hour)
+  private getValidCachedUser(token: string): User | null {
+    if (this.isTokenExpired(token)) return null;
+    const cache = this.getProfileCacheWithTimestamp();
+    if (!cache) return null;
+    // 1 hour = 3600000 ms
+    if (Date.now() - cache.cachedAt > 3600000) return null;
+    return cache.user;
   }
 
   // ✅ On app load, check and fetch user if token exists
   private checkAuthStatus(): void {
     const token = this.getAuthToken();
-
-    if (!token) {
+    if (!token || this.isTokenExpired(token)) {
       this.logout();
+      this.authLoadingSubject.next(false);
       return;
     }
-
     this.tokenSubject.next(token);
+    // Use cached profile immediately if available
+    const cachedUser = this.getValidCachedUser(token);
+    if (cachedUser) {
+      this.currentUserSubject.next(cachedUser);
+      this.isAuthenticatedSubject.next(true);
+    }
     this.getProfile().subscribe({
       next: (res) => {
         this.currentUserSubject.next(res.user);
         this.isAuthenticatedSubject.next(true);
+        this.setProfileCache(res.user);
+        this.authLoadingSubject.next(false);
       },
       error: () => {
         this.logout();
+        this.authLoadingSubject.next(false);
       }
     });
   }
+
+  // Call this on app start (e.g., in app.component.ts)
+  ensureAuthOnStartup(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    if (!isPlatformBrowser(this.platformId)) {
+      // SSR or prerender - skip auth logic
+      this.authLoadingSubject.next(false);
+      return resolve();
+    }
+
+    const token = localStorage.getItem('auth_token');
+    console.log('[AuthService] ensureAuthOnStartup running, token =', token);
+
+    if (!token || this.isTokenExpired(token)) {
+      this.authLoadingSubject.next(false);
+      return resolve();
+    }
+
+    this.tokenSubject.next(token);
+
+    const cachedUser = this.getValidCachedUser(token);
+    if (cachedUser) {
+      this.currentUserSubject.next(cachedUser);
+      this.isAuthenticatedSubject.next(true);
+    }
+
+    this.http.get(`api/parenting/users/profile`).subscribe({
+      next: (res: any) => {
+        this.currentUserSubject.next(res.user);
+        this.isAuthenticatedSubject.next(true);
+        console.log('[AuthService] Profile fetched ✅:', res);
+        this.setProfileCache(res.user);
+        this.authLoadingSubject.next(false);
+        resolve();
+      },
+      error: (err) => {
+        console.error('[AuthService] Error fetching profile ❌:', err);
+        this.logout();
+        this.authLoadingSubject.next(false);
+        resolve();
+      }
+    });
+  });
+}
+
+
+
 
   // ✅ Login and store token
   login(credentials: LoginRequest): Observable<AuthResponse> {
