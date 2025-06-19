@@ -1,7 +1,7 @@
 <div class="max-w-2xl mx-auto p-4 bg-white rounded-lg shadow">
-  <button class="btn btn-link text-orange-600 mb-4 flex items-center" routerLink="/events">
+  <button class="btn btn-link text-orange-600 mb-4 flex items-center" [routerLink]="backLink">
     <svg class="w-5 h-5 mr-1 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-    Back to Events
+    Back
   </button>
   <ng-container *ngIf="event; else loadingOrError">
     <!-- Event Banner -->
@@ -39,6 +39,20 @@
       <div class="mb-2">
         <span class="font-semibold text-orange-700">RSVP:</span>
         <span class="text-orange-700 ml-1">{{ getRSVPCount(event) }}</span>
+      </div>
+      <div class="mb-2">
+        <span class="font-semibold text-orange-700">Duration:</span>
+        <span class="text-orange-700 ml-1">{{ getEventDurationString(event) }}</span>
+      </div>
+      <div class="mb-2">
+        <span class="font-semibold text-orange-700">Status:</span>
+        <span class="text-orange-700 ml-1 capitalize">
+          <ng-container [ngSwitch]="getEventStatus(event)">
+            <span *ngSwitchCase="'upcoming'">Upcoming</span>
+            <span *ngSwitchCase="'ongoing'">Ongoing</span>
+            <span *ngSwitchCase="'completed'">Completed</span>
+          </ng-container>
+        </span>
       </div>
       <div class="flex flex-wrap gap-2 mt-2">
         <span class="bg-red-100 text-red-600 px-2 py-1 rounded" *ngIf="event.isCancelled">Cancelled</span>

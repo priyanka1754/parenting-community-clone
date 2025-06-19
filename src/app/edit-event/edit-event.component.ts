@@ -5,6 +5,7 @@ import { Event } from '../models';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { resolveImageUrl } from '../utils';
 
 @Component({
   selector: 'app-edit-event',
@@ -18,11 +19,12 @@ export class EditEventComponent implements OnInit {
   error = '';
   success = false;
   coverImageFile: File | null = null;
+  imagePreview: string | ArrayBuffer | null = null;
 
   constructor(
     private route: ActivatedRoute,
     private eventService: EventService,
-    private router: Router
+    public router: Router // changed from private to public
   ) {}
 
   ngOnInit() {
@@ -31,6 +33,10 @@ export class EditEventComponent implements OnInit {
       next: (event) => {
         this.event = { ...event };
         this.loading = false;
+        // Set image preview to current cover image if exists
+        if (this.event.coverImageUrl) {
+          this.imagePreview = resolveImageUrl(this.event.coverImageUrl);
+        }
       },
       error: (err) => {
         this.error = err.error?.message || 'Event not found.';
@@ -43,6 +49,9 @@ export class EditEventComponent implements OnInit {
     const file = event.target.files[0];
     if (file) {
       this.coverImageFile = file;
+      const reader = new FileReader();
+      reader.onload = e => this.imagePreview = reader.result;
+      reader.readAsDataURL(file);
     }
   }
 
@@ -92,5 +101,9 @@ export class EditEventComponent implements OnInit {
         this.error = err.error?.message || 'Failed to update event.';
       }
     });
+  }
+
+  goBack() {
+    window.history.back();
   }
 }

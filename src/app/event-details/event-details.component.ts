@@ -46,7 +46,13 @@ export class EventDetailsComponent implements OnInit {
   replyOpen: { [commentId: string]: boolean } = {};
   likeLoading: { [commentId: string]: boolean } = {};
 
-  constructor(private route: ActivatedRoute, private eventService: EventService, private authService: AuthService) {}
+  backLink: string = '/events';
+
+  constructor(private route: ActivatedRoute, private eventService: EventService, private authService: AuthService) {
+    this.route.queryParamMap.subscribe(params => {
+      this.backLink = params.get('redirectUrl') || '/events';
+    });
+  }
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
@@ -62,23 +68,23 @@ export class EventDetailsComponent implements OnInit {
         if (this.event && this.event.id) {
           // Set RSVP status for current user
           const userId = this.authService.currentUser?.id || '';
-          console.log('Current userId:', userId);
-          console.log('Attendees:', this.event.attendees);
-          console.log('Attendees userIds:', this.event.attendees?.map(a => a.userId));
-          const myRSVP = this.event.attendees?.find(a => {
-            let attendeeId = a.userId;
-            let match = false;
-            if (typeof attendeeId === 'string') {
-              match = attendeeId === userId;
-            } else if (attendeeId && typeof attendeeId === 'object') {
-              if ('_id' in attendeeId) match = (attendeeId as any)._id === userId;
-              else if ('$oid' in attendeeId) match = (attendeeId as any).$oid === userId;
-            }
-            console.log('Comparing', attendeeId, 'to', userId, '->', match);
-            return match;
-          });
-          console.log('Detected myRSVP:', myRSVP);
-          this.rsvpStatus = myRSVP ? myRSVP.status : null;
+          // If user is host, do not set RSVP status
+          if (this.event.host && this.event.host.id === userId) {
+            this.rsvpStatus = null;
+          } else {
+            const myRSVP = this.event.attendees?.find(a => {
+              let attendeeId = a.userId;
+              let match = false;
+              if (typeof attendeeId === 'string') {
+                match = attendeeId === userId;
+              } else if (attendeeId && typeof attendeeId === 'object') {
+                if ('_id' in attendeeId) match = (attendeeId as any)._id === userId;
+                else if ('$oid' in attendeeId) match = (attendeeId as any).$oid === userId;
+              }
+              return match;
+            });
+            this.rsvpStatus = myRSVP ? myRSVP.status : null;
+          }
           this.fetchComments();
           this.fetchFeedback();
         } else {
@@ -225,9 +231,11 @@ export class EventDetailsComponent implements OnInit {
 
   isHost(): boolean {
     if (!this.event || !this.event.host) return false;
-    if (typeof window === 'undefined') return false; // Prevent SSR error
-    const userId = (window as any).currentUserId || '';
-    return this.event.host.id === userId;
+    const userId = this.authService.currentUser?.id || '';
+    // Debugging: log both IDs to check for mismatches
+    console.log('Host ID:', this.event.host.id, 'User ID:', userId, 'Type Host:', typeof this.event.host.id, 'Type User:', typeof userId);
+    // Ensure both IDs are compared as strings
+    return String(this.event.host.id) === String(userId);
   }
 
   editRSVP() {
@@ -291,5 +299,28 @@ export class EventDetailsComponent implements OnInit {
         this.likeLoading[resolvedId] = false;
       }
     });
+  }
+
+  getEventStatus(event: Event): 'upcoming' | 'ongoing' | 'completed' {
+    if (!event || !event.date || !event.time || !event.duration) return 'upcoming';
+    const start = new Date(event.date);
+    const [hours, minutes] = event.time.split(':').map(Number);
+    start.setHours(hours, minutes, 0, 0);
+    const end = new Date(start.getTime() + Number(event.duration) * 60 * 60 * 1000);
+    const now = new Date();
+    if (now < start) return 'upcoming';
+    if (now >= start && now < end) return 'ongoing';
+    return 'completed';
+  }
+
+  getEventDurationString(event: Event): string {
+    if (!event || !event.duration) return '';
+    const hours = Math.floor(event.duration);
+    const mins = Math.round((event.duration - hours) * 60);
+    let str = '';
+    if (hours > 0) str += hours + ' hr';
+    if (hours > 0 && mins > 0) str += ' ';
+    if (mins > 0) str += mins + ' min';
+    return str;
   }
 }

@@ -90,6 +90,7 @@ export interface Event {
   isCancelled?: boolean;
   rsvpCount?: number;
   comments?: EventComment[];
+  duration: number;
 }
 
 export interface EventData {

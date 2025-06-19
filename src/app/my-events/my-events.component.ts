@@ -5,6 +5,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../auth.service';
+import { resolveImageUrl } from '../utils';
 
 @Component({
   selector: 'app-my-events',
@@ -79,5 +80,13 @@ export class MyEventsComponent implements OnInit {
       next: () => alert('Event reported. Thank you!'),
       error: (err) => alert(err.error?.message || 'Failed to report event.')
     });
+  }
+
+  goBack() {
+    window.history.length > 1 ? window.history.back() : window.location.assign('/profile');
+  }
+
+  getCoverImageUrl(event: Event): string {
+    return resolveImageUrl(event.coverImageUrl || '', '/assets/parentimg.png');
   }
 }
