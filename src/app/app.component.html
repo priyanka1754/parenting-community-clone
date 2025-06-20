@@ -1,1 +1,9 @@
-<router-outlet></router-outlet>
+<ng-container *ngIf="!(authService.authLoading$ | async); else loading">
+  <router-outlet />
+</ng-container>
+
+<ng-template #loading>
+  <div class="flex justify-center items-center h-screen">
+    <p class="text-xl">Loading...</p>
+  </div>
+</ng-template>

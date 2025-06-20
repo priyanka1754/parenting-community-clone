@@ -45,7 +45,7 @@ export interface Post {
   mediaUrl?: string;
   mediaSize?: number;
   postType?: string;
-  postId?:string;
+  postId?: string;
 }
 
 export interface PostData {
@@ -90,6 +90,7 @@ export interface Event {
   isCancelled?: boolean;
   rsvpCount?: number;
   comments?: EventComment[];
+  duration: number;
 }
 
 export interface EventData {
@@ -121,4 +122,5 @@ export interface EventComment {
   authorAvatar?: string;
   createdAt: string;
   replies?: EventComment[];
+  likes?: string[];
 }

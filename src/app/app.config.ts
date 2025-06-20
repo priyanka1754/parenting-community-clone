@@ -1,30 +1,44 @@
-import { ApplicationConfig } from '@angular/core';
+import { ApplicationConfig, APP_INITIALIZER } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import {
   provideHttpClient,
-  withInterceptorsFromDi
+  withInterceptorsFromDi,
+  HTTP_INTERCEPTORS,
 } from '@angular/common/http';
 import { provideClientHydration } from '@angular/platform-browser';
 import { provideZoneChangeDetection } from '@angular/core';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import { routes } from './app.routes';
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
-import { AuthInterceptor } from './auth.interceptor'; // ✅ adjust the path if needed
+import { AuthInterceptor } from './auth.interceptor';
+import { AuthService } from './auth.service';
+
+export function initializeAuth(authService: AuthService): () => Promise<void> {
+  return () => authService.ensureAuthOnStartup();
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
     provideClientHydration(),
-    provideHttpClient(withInterceptorsFromDi()), // ✅ enable interceptors
+    provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
 
-    // ✅ Register your interceptor with multi: true
+    // ✅ Register interceptor
     {
       provide: HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
       multi: true,
-    }
-  ]
+    },
+
+    // ✅ Run auth logic before app initializes
+    {
+      provide: APP_INITIALIZER,
+      useFactory: (authService: AuthService) => () =>
+        authService.ensureAuthOnStartup(),
+      deps: [AuthService],
+      multi: true,
+    },
+  ],
 };

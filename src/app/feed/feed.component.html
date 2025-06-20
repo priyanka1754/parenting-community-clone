@@ -7,30 +7,26 @@
 >
   <ng-container *ngIf="loading && posts.length === 0">
     <div class="text-center py-8">
-      <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
+      ></div>
       <p class="mt-4 text-gray-600">Loading feed...</p>
     </div>
   </ng-container>
 
-  <div *ngFor="let post of posts; trackBy: trackByPostId" class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
+  <div
+    *ngFor="let post of posts; trackBy: trackByPostId"
+    class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100"
+  >
     <!-- Profile Section -->
     <div class="flex items-start space-x-4 mb-4">
-      <ng-container *ngIf="getUserAvatar(post.author); else avatarInitials">
-        <img 
-          [src]="getUserAvatar(post.author)" 
-          class="w-12 h-12 rounded-full object-cover border-2 border-gray-100" 
-          alt="Profile"
-          [title]="getDisplayName(post.author)"
-          (error)="onImageError($event)"
-        />
-      </ng-container>
-      <ng-template #avatarInitials>
-        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center border-2 border-gray-100">
-          <span class="text-white text-lg font-bold">
-            {{ getAvatarInitials(post.author.name) }}
-          </span>
-        </div>
-      </ng-template>
+      <img
+        [src]="getUserAvatar(post.author)"
+        class="w-12 h-12 rounded-full object-cover border-2 bg-white"
+        alt="Profile"
+        [title]="getDisplayName(post.author)"
+        (error)="onImageError($event)"
+      />
       <div class="flex-1 min-w-0">
         <div class="flex items-center space-x-2">
           <p class="font-semibold text-lg text-gray-900 truncate">
@@ -42,12 +38,16 @@
           </p>
         </div>
         <!-- User Bio -->
-        <p *ngIf="getUserBio(post.author)" 
-           class="text-sm text-gray-600 mt-1 line-clamp-1">
+        <p
+          *ngIf="getUserBio(post.author)"
+          class="text-sm text-gray-600 mt-1 line-clamp-1"
+        >
           {{ getUserBio(post.author) }}
         </p>
         <!-- Category Badge -->
-        <span class="inline-block mt-2 px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+        <span
+          class="inline-block mt-2 px-3 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full"
+        >
           {{ post.category }}
         </span>
       </div>
@@ -55,24 +55,32 @@
 
     <!-- Post Content (truncated) -->
     <div class="mb-4 cursor-pointer" (click)="openPostDetails(post)">
-      <div *ngIf="post.content" class="text-gray-700 whitespace-pre-line leading-relaxed">
-        {{ post.content | slice:0:120 }}<span *ngIf="post.content.length > 120">...</span>
+      <div
+        *ngIf="post.content"
+        class="text-gray-700 whitespace-pre-line leading-relaxed"
+      >
+        {{ post.content | slice: 0 : 120
+        }}<span *ngIf="post.content.length > 120">...</span>
       </div>
     </div>
 
     <!-- Media Section (show only image/video preview, optional) -->
-    <div *ngIf="post.imageUrl || post.videoUrl" class="mb-4 cursor-pointer" (click)="openPostDetails(post)">
+    <div
+      *ngIf="post.imageUrl || post.videoUrl"
+      class="mb-4 cursor-pointer"
+      (click)="openPostDetails(post)"
+    >
       <div *ngIf="post.imageUrl" class="relative">
-        <img 
-          [src]="post.imageUrl" 
-          class="w-full rounded-xl object-cover max-h-60 border border-gray-200" 
+        <img
+          [src]="post.imageUrl"
+          class="w-full rounded-xl object-cover max-h-60 border border-gray-200"
           alt="Post Image"
           (error)="onImageError($event)"
         />
       </div>
       <div *ngIf="post.videoUrl" class="relative">
-        <video 
-          controls 
+        <video
+          controls
           class="w-full rounded-xl max-h-60 border border-gray-200"
           preload="metadata"
         >
@@ -83,15 +91,20 @@
     </div>
 
     <!-- Engagement Stats -->
-    <div *ngIf="(post.likes && post.likes.length > 0) || (post.comments && post.comments.length > 0)" 
-         class="flex items-center space-x-4 text-sm text-gray-600 mb-3 pb-3 border-b border-gray-100">
+    <div
+      *ngIf="
+        (post.likes && post.likes.length > 0) ||
+        (post.comments && post.comments.length > 0)
+      "
+      class="flex items-center space-x-4 text-sm text-gray-600 mb-3 pb-3 border-b border-gray-100"
+    >
       <span *ngIf="post.likes && post.likes.length > 0">
-        <span class="font-medium">{{ post.likes.length }}</span> 
-        {{ post.likes.length === 1 ? 'like' : 'likes' }}
+        <span class="font-medium">{{ post.likes.length }}</span>
+        {{ post.likes.length === 1 ? "like" : "likes" }}
       </span>
       <span *ngIf="post.comments && post.comments.length > 0">
-        <span class="font-medium">{{ post.comments.length }}</span> 
-        {{ post.comments.length === 1 ? 'comment' : 'comments' }}
+        <span class="font-medium">{{ post.comments.length }}</span>
+        {{ post.comments.length === 1 ? "comment" : "comments" }}
       </span>
     </div>
 
@@ -100,7 +113,11 @@
       <!-- Like Button -->
       <button
         class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200"
-        [ngClass]="hasLiked(post) ? 'bg-green-600 text-white' : 'bg-orange-500 text-white'"
+        [ngClass]="
+          hasLiked(post)
+            ? 'bg-green-600 text-white'
+            : 'bg-orange-500 text-white'
+        "
         [disabled]="hasLiked(post) || isLiking[post.postId!]"
         (click)="likePost(post)"
       >
@@ -111,19 +128,26 @@
         <span class="ml-2 font-bold">{{ post.likes?.length || 0 }}</span>
       </button>
       <!-- Snackbar for Like Feedback -->
-      <div *ngIf="showLikeSnackbar[post.postId!]" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50 transition">
+      <div
+        *ngIf="showLikeSnackbar[post.postId!]"
+        class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded shadow-lg z-50 transition"
+      >
         Please log in to like this post.
       </div>
       <!-- Comment Button -->
-      <button class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium"
-        (click)="commentOnPost(post)">
+      <button
+        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 bg-blue-50 text-blue-600 hover:bg-blue-100 font-medium"
+        (click)="commentOnPost(post)"
+      >
         <i class="fas fa-comment text-sm"></i>
         <span>Comment</span>
         <span class="ml-2 font-bold">{{ post.comments?.length || 0 }}</span>
       </button>
       <!-- Share Button -->
-      <button class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium"
-        (click)="sharePost(post)">
+      <button
+        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 bg-gray-100 text-gray-700 hover:bg-gray-200 font-medium"
+        (click)="sharePost(post)"
+      >
         <i class="fa-solid fa-share-from-square"></i>
         <span>Share</span>
       </button>
@@ -132,9 +156,10 @@
 
   <!-- Refresh Button -->
   <div class="text-center py-4">
-    <button 
-      (click)="refreshFeed()" 
-      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+    <button
+      (click)="refreshFeed()"
+      class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+    >
       <i class="fas fa-refresh mr-2"></i>
       Refresh Feed
     </button>
@@ -142,7 +167,9 @@
 
   <!-- Loading indicator for infinite scroll -->
   <div *ngIf="loading && posts.length > 0" class="text-center py-6">
-    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+    <div
+      class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"
+    ></div>
     <p class="mt-2 text-gray-500">Loading more posts...</p>
   </div>
 
@@ -159,6 +186,8 @@
   <div *ngIf="!loading && posts.length === 0" class="text-center py-12">
     <div class="text-gray-400 text-lg mb-2">📝</div>
     <h3 class="text-gray-600 font-medium mb-2">No posts yet</h3>
-    <p class="text-gray-500 text-sm">Be the first to share something with the community!</p>
+    <p class="text-gray-500 text-sm">
+      Be the first to share something with the community!
+    </p>
   </div>
 </div>

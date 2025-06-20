@@ -5,6 +5,7 @@ import { Event } from '../models';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { resolveImageUrl } from '../utils';
 
 @Component({
   selector: 'app-edit-event',
@@ -18,11 +19,13 @@ export class EditEventComponent implements OnInit {
   error = '';
   success = false;
   coverImageFile: File | null = null;
+  imagePreview: string | ArrayBuffer | null = null;
+  today: string = new Date().toISOString().split('T')[0]; // Added today property
 
   constructor(
     private route: ActivatedRoute,
     private eventService: EventService,
-    private router: Router
+    public router: Router, // changed from private to public
   ) {}
 
   ngOnInit() {
@@ -31,11 +34,15 @@ export class EditEventComponent implements OnInit {
       next: (event) => {
         this.event = { ...event };
         this.loading = false;
+        // Set image preview to current cover image if exists
+        if (this.event.coverImageUrl) {
+          this.imagePreview = resolveImageUrl(this.event.coverImageUrl);
+        }
       },
       error: (err) => {
         this.error = err.error?.message || 'Event not found.';
         this.loading = false;
-      }
+      },
     });
   }
 
@@ -43,6 +50,9 @@ export class EditEventComponent implements OnInit {
     const file = event.target.files[0];
     if (file) {
       this.coverImageFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => (this.imagePreview = reader.result);
+      reader.readAsDataURL(file);
     }
   }
 
@@ -65,22 +75,35 @@ export class EditEventComponent implements OnInit {
     if (this.coverImageFile) {
       const formData = new FormData();
       formData.append('media', this.coverImageFile);
-      this.eventService['http'].post<{ url: string }>('/api/parenting/events/upload', formData).subscribe({
-        next: (res) => {
-          this.saveEvent(res.url);
-        },
-        error: () => {
-          this.loading = false;
-          this.error = 'Image upload failed.';
-        }
-      });
+      this.eventService['http']
+        .post<{ url: string }>('/api/parenting/events/upload', formData)
+        .subscribe({
+          next: (res) => {
+            this.saveEvent(res.url);
+          },
+          error: () => {
+            this.loading = false;
+            this.error = 'Image upload failed.';
+          },
+        });
     } else {
       this.saveEvent();
     }
   }
 
   private saveEvent(coverImageUrl?: string) {
-    const updateData = { ...this.event, coverImageUrl: coverImageUrl || this.event.coverImageUrl };
+    // Combine date and time into a single ISO string for event.date
+    if (this.event.date && this.event.time) {
+      // event.date is 'YYYY-MM-DD', event.time is 'HH:mm'
+      const dateTimeString = `${this.event.date}T${this.event.time}`;
+      const dateObj = new Date(dateTimeString);
+      // If the time is not set, fallback to 00:00
+      this.event.date = dateObj.toISOString();
+    }
+    const updateData = {
+      ...this.event,
+      coverImageUrl: coverImageUrl || this.event.coverImageUrl,
+    };
     this.eventService.updateEvent(this.event.id, updateData).subscribe({
       next: () => {
         this.loading = false;
@@ -90,7 +113,11 @@ export class EditEventComponent implements OnInit {
       error: (err) => {
         this.loading = false;
         this.error = err.error?.message || 'Failed to update event.';
-      }
+      },
     });
+  }
+
+  goBack() {
+    window.history.back();
   }
 }

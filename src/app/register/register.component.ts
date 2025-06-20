@@ -10,10 +10,10 @@ import { PostService } from '../post-creation/postCreation.service';
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule,CommonModule],
+  imports: [ReactiveFormsModule, CommonModule],
   standalone: true,
   templateUrl: './register.component.html',
-  providers: []
+  providers: [],
 })
 export class RegisterComponent implements OnInit {
   registerForm: FormGroup;
@@ -21,13 +21,12 @@ export class RegisterComponent implements OnInit {
   showSuccessModal = false;
   errorMessage = '';
   avatarPreview: string = '';
-  
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private postService: PostService
+    private postService: PostService,
   ) {
     this.registerForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
@@ -37,7 +36,7 @@ export class RegisterComponent implements OnInit {
       bio: [''],
       role: ['parent'],
       location: [''],
-      children: this.fb.array([])
+      children: this.fb.array([]),
     });
   }
 
@@ -48,14 +47,15 @@ export class RegisterComponent implements OnInit {
   }
 
   get childrenFormGroups(): FormGroup[] {
-    return (this.registerForm.get('children') as FormArray).controls as FormGroup[];
+    return (this.registerForm.get('children') as FormArray)
+      .controls as FormGroup[];
   }
 
   addChild(): void {
     const childForm = this.fb.group({
       name: ['', Validators.required],
       age: [0, [Validators.required, Validators.min(0)]],
-      interests: [[]]
+      interests: [[]],
     });
     this.children.push(childForm);
   }
@@ -88,12 +88,12 @@ export class RegisterComponent implements OnInit {
       this.errorMessage = '';
 
       const formData: RegisterRequest = this.registerForm.value;
-      
+
       this.authService.register(formData).subscribe({
         next: (response) => {
           this.isLoading = false;
           this.showSuccessModal = true;
-          
+
           // Auto redirect to login after 3 seconds
           setTimeout(() => {
             this.showSuccessModal = false;
@@ -102,8 +102,9 @@ export class RegisterComponent implements OnInit {
         },
         error: (error) => {
           this.isLoading = false;
-          this.errorMessage = error.error?.message || 'Registration failed. Please try again.';
-        }
+          this.errorMessage =
+            error.error?.message || 'Registration failed. Please try again.';
+        },
       });
     } else {
       this.markFormGroupTouched();
@@ -111,14 +112,14 @@ export class RegisterComponent implements OnInit {
   }
 
   private markFormGroupTouched(): void {
-    Object.keys(this.registerForm.controls).forEach(field => {
+    Object.keys(this.registerForm.controls).forEach((field) => {
       const control = this.registerForm.get(field);
       control?.markAsTouched({ onlySelf: true });
     });
 
-    this.children.controls.forEach(child => {
+    this.children.controls.forEach((child) => {
       const childGroup = child as FormGroup;
-      Object.keys(childGroup.controls).forEach(field => {
+      Object.keys(childGroup.controls).forEach((field) => {
         const control = childGroup.get(field);
         control?.markAsTouched({ onlySelf: true });
       });
@@ -159,7 +160,7 @@ export class RegisterComponent implements OnInit {
         },
         error: () => {
           this.errorMessage = 'Failed to upload avatar. Please try again.';
-        }
+        },
       });
     }
   }

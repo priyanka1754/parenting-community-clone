@@ -1,4 +1,10 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  Inject,
+  PLATFORM_ID,
+} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { Post, User } from '../models';
@@ -8,6 +14,7 @@ import { Subscription } from 'rxjs';
 import { AuthService } from '../auth.service';
 import { FormsModule } from '@angular/forms';
 import { isPlatformBrowser } from '@angular/common';
+import { resolveImageUrl } from '../utils';
 
 @Component({
   selector: 'app-feed-details',
@@ -38,12 +45,12 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
     private router: Router,
     private postService: PostService,
     private authService: AuthService,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
   ) {}
 
   ngOnInit(): void {
     this.checkLoginStatus();
-    this.routeSub = this.route.paramMap.subscribe(params => {
+    this.routeSub = this.route.paramMap.subscribe((params) => {
       const postId = params.get('id');
       if (postId) {
         this.fetchPost(postId);
@@ -53,7 +60,7 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
       }
     });
     // Smooth scroll to comments if query param is set
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       if (params['scrollToComments'] === 'true') {
         if (isPlatformBrowser(this.platformId)) {
           setTimeout(() => {
@@ -80,23 +87,30 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
   fetchPost(postId: string): void {
     this.loading = true;
     this.error = null;
-    
+
     this.postSub = this.postService.getPostById(postId).subscribe({
       next: (res) => {
         if (res?.post) {
           const rawPost = res.post;
-          const author = typeof rawPost.authorId === 'object' && rawPost.authorId !== null
-            ? rawPost.authorId
-            : { name: 'Unknown', avatar: '', bio: '' };
-          
+          const author =
+            typeof rawPost.authorId === 'object' && rawPost.authorId !== null
+              ? rawPost.authorId
+              : { name: 'Unknown', avatar: '', bio: '' };
+
           this.post = {
             id: rawPost._id || rawPost.id,
             postId: rawPost.postId,
             author,
             content: rawPost.content,
             createdAt: rawPost.createdAt,
-            imageUrl: rawPost.mediaType === 'photo' ? this.getFullMediaUrl(rawPost.mediaUrl) : undefined,
-            videoUrl: rawPost.mediaType === 'video' ? this.getFullMediaUrl(rawPost.mediaUrl) : undefined,
+            imageUrl:
+              rawPost.mediaType === 'photo'
+                ? this.getFullMediaUrl(rawPost.mediaUrl)
+                : undefined,
+            videoUrl:
+              rawPost.mediaType === 'video'
+                ? this.getFullMediaUrl(rawPost.mediaUrl)
+                : undefined,
             images: rawPost.images,
             likes: rawPost.likes || [],
             comments: rawPost.comments || [],
@@ -104,9 +118,9 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
             mediaType: rawPost.mediaType,
             mediaUrl: rawPost.mediaUrl,
             mediaSize: rawPost.mediaSize,
-            postType: rawPost.postType
+            postType: rawPost.postType,
           };
-          
+
           this.loadComments();
           this.checkUserLikeStatus();
         } else {
@@ -118,18 +132,23 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
         console.error('Error fetching post:', err);
         this.error = 'Failed to load post';
         this.loading = false;
-      }
+      },
     });
   }
 
   likePost() {
     if (!this.isLoggedIn) {
       this.showLikeSnackbar = true;
-      setTimeout(() => this.showLikeSnackbar = false, 3000);
+      setTimeout(() => (this.showLikeSnackbar = false), 3000);
       return;
     }
 
-    if (!this.post || !this.post.postId || !this.currentUser.id || this.isLiking) {
+    if (
+      !this.post ||
+      !this.post.postId ||
+      !this.currentUser.id ||
+      this.isLiking
+    ) {
       return;
     }
 
@@ -151,23 +170,31 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
         console.error('Error liking post:', error);
         this.isLiking = false;
         // Show user-friendly error message
-        const errorMessage = error.error?.message || 'Failed to like/unlike post';
+        const errorMessage =
+          error.error?.message || 'Failed to like/unlike post';
         this.showErrorMessage(errorMessage);
-      }
+      },
     });
   }
 
   checkUserLikeStatus() {
-    if (this.isLoggedIn && this.post && this.post.postId && this.currentUser.id) {
-      this.postService.getLikeStatus(this.post.postId, this.currentUser.id).subscribe({
-        next: (response) => {
-          this.hasLiked = response.hasLiked;
-        },
-        error: (error) => {
-          console.error('Error checking like status:', error);
-          this.hasLiked = false;
-        }
-      });
+    if (
+      this.isLoggedIn &&
+      this.post &&
+      this.post.postId &&
+      this.currentUser.id
+    ) {
+      this.postService
+        .getLikeStatus(this.post.postId, this.currentUser.id)
+        .subscribe({
+          next: (response) => {
+            this.hasLiked = response.hasLiked;
+          },
+          error: (error) => {
+            console.error('Error checking like status:', error);
+            this.hasLiked = false;
+          },
+        });
     } else {
       this.hasLiked = false;
     }
@@ -188,39 +215,48 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
         error: (error) => {
           console.error('Error loading comments:', error);
           this.comments = [];
-        }
+        },
       });
     }
   }
 
   // Fixed comment adding
   addComment() {
-    if (!this.newComment?.trim() || !this.isLoggedIn || !this.post || !this.post.postId || this.isCommenting || !this.currentUser.id) {
+    if (
+      !this.newComment?.trim() ||
+      !this.isLoggedIn ||
+      !this.post ||
+      !this.post.postId ||
+      this.isCommenting ||
+      !this.currentUser.id
+    ) {
       return;
     }
 
     this.isCommenting = true;
 
-    this.postService.addComment(this.post.postId, this.newComment.trim(), this.currentUser.id).subscribe({
-      next: (response) => {
-        if (response.success && response.comment) {
-          // Add new comment to the beginning of the array
-          this.comments.unshift(response.comment);
-          this.updateDisplayedComments();
-          // Update post comment count if available
-          if (this.post && response.commentCount) {
-            this.post.comments = Array(response.commentCount).fill(null);
+    this.postService
+      .addComment(this.post.postId, this.newComment.trim(), this.currentUser.id)
+      .subscribe({
+        next: (response) => {
+          if (response.success && response.comment) {
+            // Add new comment to the beginning of the array
+            this.comments.unshift(response.comment);
+            this.updateDisplayedComments();
+            // Update post comment count if available
+            if (this.post && response.commentCount) {
+              this.post.comments = Array(response.commentCount).fill(null);
+            }
+            this.newComment = '';
           }
-          this.newComment = '';
-        }
-        this.isCommenting = false;
-      },
-      error: (error) => {
-        console.error('Error adding comment:', error);
-        this.isCommenting = false;
-        this.showErrorMessage('Failed to add comment. Please try again.');
-      }
-    });
+          this.isCommenting = false;
+        },
+        error: (error) => {
+          console.error('Error adding comment:', error);
+          this.isCommenting = false;
+          this.showErrorMessage('Failed to add comment. Please try again.');
+        },
+      });
   }
 
   updateDisplayedComments() {
@@ -246,8 +282,13 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
 
   share() {
     if (!this.post) return;
-    const textToShare = `Check out this post on SkipCry!\n\n"${this.post.content?.slice(0, 100)}..."\n\nRead more: ${location.href}`;
-    const whatsappLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(textToShare)}`;
+    const textToShare = `Check out this post on SkipCry!\n\n"${this.post.content?.slice(
+      0,
+      100,
+    )}..."\n\nRead more: ${location.href}`;
+    const whatsappLink = `https://api.whatsapp.com/send?text=${encodeURIComponent(
+      textToShare,
+    )}`;
     if (isPlatformBrowser(this.platformId)) {
       window.open(whatsappLink, '_blank');
     }
@@ -261,15 +302,13 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
     if (mediaUrl.startsWith('/uploads')) {
       return `http://localhost:3000${mediaUrl}`;
     }
-    return `http://localhost:3000/${mediaUrl.startsWith('uploads') ? mediaUrl : 'uploads/' + mediaUrl}`;
+    return `http://localhost:3000/${
+      mediaUrl.startsWith('uploads') ? mediaUrl : 'uploads/' + mediaUrl
+    }`;
   }
 
   getUserAvatar(author: User): string {
-    if (author?.avatar && author.avatar.trim()) {
-      return author.avatar;
-    }
-    const name = author?.name || 'Anonymous User';
-    return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff&size=128`;
+    return resolveImageUrl(author?.avatar || '', '/assets/user-img.png');
   }
 
   getDisplayName(author: User): string {
@@ -289,19 +328,16 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
   }
 
   onImageError(event: any): void {
-    event.target.src = 'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&size=128';
+    event.target.src =
+      'https://ui-avatars.com/api/?name=User&background=6366f1&color=fff&size=128';
   }
 
   goBack(): void {
     this.router.navigate(['/home']);
   }
 
-  // Helper method to show error messages
   private showErrorMessage(message: string) {
-    // You can implement a toast service or use a simple alert
-    // For now, using console.error and could show a temporary message
     console.error(message);
-    // You could also set a property to show error in template
   }
 
   // Getter for like count
@@ -312,5 +348,16 @@ export class FeedDetailsComponent implements OnInit, OnDestroy {
   // Getter for comment count
   get commentCount(): number {
     return this.comments?.length || 0;
+  }
+
+  resolveImageUrl(
+    url: string,
+    fallback: string = '/assets/user-img.png',
+  ): string {
+    if (!url) return fallback;
+    if (url.startsWith('http')) return url;
+    if (url.startsWith('/uploads')) return `http://localhost:3000${url}`;
+    if (url.startsWith('uploads')) return `http://localhost:3000/${url}`;
+    return url;
   }
 }

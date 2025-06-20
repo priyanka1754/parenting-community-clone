@@ -24,43 +24,46 @@ export class CreateEventComponent {
     category: '',
     maxAttendees: '',
     visibility: 'Public',
-    coverImageUrl: ''
+    coverImageUrl: '',
+    duration: '',
   };
   loading = false;
   error = '';
   success = false;
   today = new Date().toISOString().split('T')[0];
   coverImageFile: File | null = null;
+  imagePreview: string | ArrayBuffer | null = null;
 
-  constructor(private eventService: EventService, private authService: AuthService, private router: Router, private snackBar: MatSnackBar) {}
-
-  ngOnInit() {
-    if (!this.authService.isAuthenticated) {
-      this.snackBar.open('Please log in to create an event.', 'Close', { duration: 3000 });
-      setTimeout(() => {
-        this.router.navigate(['/login']);
-      }, 3000);
-    }
-  }
+  constructor(
+    private eventService: EventService,
+    private authService: AuthService,
+    private router: Router,
+    private snackBar: MatSnackBar,
+  ) {}
 
   onFileChange(event: any) {
     const file = event.target.files[0];
     if (file) {
       this.coverImageFile = file;
+      const reader = new FileReader();
+      reader.onload = (e) => (this.imagePreview = reader.result);
+      reader.readAsDataURL(file);
     }
   }
 
   onSubmit() {
     this.error = '';
     this.success = false;
-    if (!this.authService.isAuthenticated) {
-      this.snackBar.open('Please log in to create an event.', 'Close', { duration: 3000 });
-      setTimeout(() => {
-        this.router.navigate(['/login']);
-      }, 3000);
-      return;
-    }
-    if (!this.event.title || !this.event.description || !this.event.date || !this.event.time || !this.event.eventType || !this.event.category || !this.event.visibility) {
+    if (
+      !this.event.title ||
+      !this.event.description ||
+      !this.event.date ||
+      !this.event.time ||
+      !this.event.eventType ||
+      !this.event.category ||
+      !this.event.visibility ||
+      !this.event.duration
+    ) {
       this.error = 'Please fill all required fields.';
       return;
     }
@@ -76,15 +79,17 @@ export class CreateEventComponent {
     if (this.coverImageFile) {
       const formData = new FormData();
       formData.append('media', this.coverImageFile);
-      this.eventService['http'].post<{ url: string }>('/api/parenting/events/upload', formData).subscribe({
-        next: (res) => {
-          this.createEventWithImage(res.url);
-        },
-        error: () => {
-          this.loading = false;
-          this.error = 'Image upload failed.';
-        }
-      });
+      this.eventService['http']
+        .post<{ url: string }>('/api/parenting/events/upload', formData)
+        .subscribe({
+          next: (res) => {
+            this.createEventWithImage(res.url);
+          },
+          error: () => {
+            this.loading = false;
+            this.error = 'Image upload failed.';
+          },
+        });
     } else {
       this.createEventWithImage();
     }
@@ -93,6 +98,13 @@ export class CreateEventComponent {
   private createEventWithImage(coverImageUrl?: string) {
     const eventData = { ...this.event };
     if (coverImageUrl) eventData.coverImageUrl = coverImageUrl;
+    // Combine date and time into a single ISO string for the date field
+    if (eventData.date && eventData.time) {
+      const [year, month, day] = eventData.date.split('-').map(Number);
+      const [hours, minutes] = eventData.time.split(':').map(Number);
+      const combinedDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
+      eventData.date = combinedDate.toISOString();
+    }
     // Remove any host field if present
     if ('host' in eventData) delete eventData.host;
     this.eventService.createEvent(eventData).subscribe({
@@ -111,14 +123,27 @@ export class CreateEventComponent {
           category: '',
           maxAttendees: '',
           visibility: 'Public',
-          coverImageUrl: ''
+          coverImageUrl: '',
+          duration: '',
         };
         this.coverImageFile = null;
+        this.imagePreview = null;
       },
       error: (err) => {
         this.loading = false;
         this.error = err.error?.message || 'Failed to create event.';
-      }
+      },
     });
+  }
+
+  goBack() {
+    this.router.navigate(['/events']);
+  }
+
+  autoResize(event: Event) {
+    const textarea = event.target as HTMLTextAreaElement;
+    textarea.style.height = 'auto';
+    const maxHeight = window.innerHeight / 4;
+    textarea.style.height = Math.min(textarea.scrollHeight, maxHeight) + 'px';
   }
 }

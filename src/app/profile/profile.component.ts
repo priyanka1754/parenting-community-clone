@@ -6,6 +6,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { resolveImageUrl } from '../utils';
 
 @Component({
   selector: 'app-profile',
@@ -22,7 +23,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
   constructor(
     private authService: AuthService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
   ) {}
 
   ngOnInit(): void {
@@ -34,7 +35,7 @@ export class ProfileComponent implements OnInit, OnDestroy {
       error: () => {
         this.currentUser = null;
         this.isAuthenticated = false;
-      }
+      },
     });
   }
 
@@ -64,22 +65,10 @@ export class ProfileComponent implements OnInit, OnDestroy {
     this.router.navigate(['/home']);
   }
 
-  getAvatarInitials(name: string): string {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  }
-
-  getAvatarUrl(): string | null {
-    if (this.currentUser && this.currentUser.avatar) {
-      if (this.currentUser.avatar.startsWith('/uploads/avatar')) {
-        return `http://localhost:3000${this.currentUser.avatar}`;
-      }
-      if (this.currentUser.avatar.startsWith('uploads/avatar')) {
-        return `http://localhost:3000/${this.currentUser.avatar}`;
-      }
-      if (this.currentUser.avatar.startsWith('http')) {
-        return this.currentUser.avatar;
-      }
-    }
-    return null;
+  getAvatarUrl(): string {
+    return resolveImageUrl(
+      this.currentUser?.avatar || '',
+      '/assets/user-img.png',
+    );
   }
 }

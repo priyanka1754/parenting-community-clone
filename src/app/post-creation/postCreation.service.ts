@@ -5,7 +5,7 @@ import { map, catchError } from 'rxjs/operators';
 import { PostData, CreatePostResponse, UploadResponse } from '../models';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class PostService {
   private http = inject(HttpClient);
@@ -16,7 +16,9 @@ export class PostService {
     if (!mediaUrl) return '';
     if (mediaUrl.startsWith('http')) return mediaUrl;
     if (mediaUrl.startsWith('/uploads')) return `${mediaUrl}`;
-    return `/${mediaUrl.startsWith('uploads') ? mediaUrl : 'uploads/' + mediaUrl}`;
+    return `/${
+      mediaUrl.startsWith('uploads') ? mediaUrl : 'uploads/' + mediaUrl
+    }`;
   }
 
   createPost(postData: PostData): Observable<CreatePostResponse> {
@@ -24,16 +26,18 @@ export class PostService {
   }
 
   getPaginatedPosts(page: number, limit: number): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}?page=${page}&limit=${limit}`).pipe(
-      map(response => ({
-        ...response,
-        posts: response.posts.map((post: any) => ({
-          ...post,
-          mediaUrl: this.getFullMediaUrl(post.mediaUrl),
-          postId: post.postId
-        }))
-      }))
-    );
+    return this.http
+      .get<any>(`${this.apiUrl}?page=${page}&limit=${limit}`)
+      .pipe(
+        map((response) => ({
+          ...response,
+          posts: response.posts.map((post: any) => ({
+            ...post,
+            mediaUrl: this.getFullMediaUrl(post.mediaUrl),
+            postId: post.postId,
+          })),
+        })),
+      );
   }
 
   uploadMedia(file: File): Observable<UploadResponse> {
@@ -46,7 +50,10 @@ export class PostService {
     const formData = new FormData();
     formData.append('avatar', file);
     // Use a dedicated endpoint for avatar uploads if available, else reuse /upload
-    return this.http.post<UploadResponse>(`/api/parenting/users/avatar`, formData);
+    return this.http.post<UploadResponse>(
+      `/api/parenting/users/avatar`,
+      formData,
+    );
   }
 
   getAllPosts(): Observable<any[]> {
@@ -71,12 +78,14 @@ export class PostService {
 
   // Update your likePost method in the service:
   likePost(postId: string, userId: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/${postId}/like`, { userId }).pipe(
-      catchError(error => {
-        console.error('Like service error:', error);
-        return throwError(() => error);
-      })
-    );
+    return this.http
+      .post<any>(`${this.apiUrl}/${postId}/like`, { userId })
+      .pipe(
+        catchError((error) => {
+          console.error('Like service error:', error);
+          return throwError(() => error);
+        }),
+      );
   }
 
   getLikeStatus(postId: string, userId: string): Observable<any> {
@@ -84,12 +93,17 @@ export class PostService {
   }
 
   addComment(postId: string, comment: string, userId: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/${postId}/comment`, { content: comment, userId }).pipe(
-      catchError(error => {
-        console.error('Comment service error:', error);
-        return throwError(() => error);
+    return this.http
+      .post<any>(`${this.apiUrl}/${postId}/comment`, {
+        content: comment,
+        userId,
       })
-    );
+      .pipe(
+        catchError((error) => {
+          console.error('Comment service error:', error);
+          return throwError(() => error);
+        }),
+      );
   }
 
   getComments(postId: string): Observable<any> {
