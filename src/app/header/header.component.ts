@@ -6,11 +6,15 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   template: `
-  <header class="bg-white border-b border-gray-200 px-6 py-4 fixed top-0 left-0 right-0 z-50">
+    <header
+      class="bg-white border-b border-gray-200 px-6 py-4 fixed top-0 left-0 right-0 z-50"
+    >
       <div class="flex items-center justify-between max-w-7xl mx-auto">
         <!-- Logo and Brand -->
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 bg-gradient-to-br from-purple-600 to-indigo-500 rounded-md flex items-center justify-center">
+          <div
+            class="w-9 h-9 bg-gradient-to-br from-purple-600 to-indigo-500 rounded-md flex items-center justify-center"
+          >
             <span class="text-white font-bold text-sm">P</span>
           </div>
           <span class="text-gray-900 font-semibold text-xl">ParentHub</span>
@@ -39,7 +43,7 @@ import { CommonModule } from '@angular/common';
       </div>
     </header>
   `,
-  styleUrls: []
+  styleUrls: [],
 })
 export class HeaderComponent {
   onNotificationClick(): void {

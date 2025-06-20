@@ -7,8 +7,8 @@ export const AppInitGuard: CanActivateFn = () => {
   const authService = inject(AuthService);
 
   return authService.authLoading$.pipe(
-    filter(loading => !loading),     // ⛔️ wait until authLoading is false
-    take(1),                          // ✅ complete after one value
-    map(() => true)                   // ✅ allow navigation
+    filter((loading) => !loading), // ⛔️ wait until authLoading is false
+    take(1), // ✅ complete after one value
+    map(() => true), // ✅ allow navigation
   );
 };

@@ -25,7 +25,7 @@ export class CreateEventComponent {
     maxAttendees: '',
     visibility: 'Public',
     coverImageUrl: '',
-    duration: ''
+    duration: '',
   };
   loading = false;
   error = '';
@@ -34,14 +34,19 @@ export class CreateEventComponent {
   coverImageFile: File | null = null;
   imagePreview: string | ArrayBuffer | null = null;
 
-  constructor(private eventService: EventService, private authService: AuthService, private router: Router, private snackBar: MatSnackBar) {}
+  constructor(
+    private eventService: EventService,
+    private authService: AuthService,
+    private router: Router,
+    private snackBar: MatSnackBar,
+  ) {}
 
   onFileChange(event: any) {
     const file = event.target.files[0];
     if (file) {
       this.coverImageFile = file;
       const reader = new FileReader();
-      reader.onload = e => this.imagePreview = reader.result;
+      reader.onload = (e) => (this.imagePreview = reader.result);
       reader.readAsDataURL(file);
     }
   }
@@ -49,7 +54,16 @@ export class CreateEventComponent {
   onSubmit() {
     this.error = '';
     this.success = false;
-    if (!this.event.title || !this.event.description || !this.event.date || !this.event.time || !this.event.eventType || !this.event.category || !this.event.visibility || !this.event.duration) {
+    if (
+      !this.event.title ||
+      !this.event.description ||
+      !this.event.date ||
+      !this.event.time ||
+      !this.event.eventType ||
+      !this.event.category ||
+      !this.event.visibility ||
+      !this.event.duration
+    ) {
       this.error = 'Please fill all required fields.';
       return;
     }
@@ -65,15 +79,17 @@ export class CreateEventComponent {
     if (this.coverImageFile) {
       const formData = new FormData();
       formData.append('media', this.coverImageFile);
-      this.eventService['http'].post<{ url: string }>('/api/parenting/events/upload', formData).subscribe({
-        next: (res) => {
-          this.createEventWithImage(res.url);
-        },
-        error: () => {
-          this.loading = false;
-          this.error = 'Image upload failed.';
-        }
-      });
+      this.eventService['http']
+        .post<{ url: string }>('/api/parenting/events/upload', formData)
+        .subscribe({
+          next: (res) => {
+            this.createEventWithImage(res.url);
+          },
+          error: () => {
+            this.loading = false;
+            this.error = 'Image upload failed.';
+          },
+        });
     } else {
       this.createEventWithImage();
     }
@@ -108,7 +124,7 @@ export class CreateEventComponent {
           maxAttendees: '',
           visibility: 'Public',
           coverImageUrl: '',
-          duration: ''
+          duration: '',
         };
         this.coverImageFile = null;
         this.imagePreview = null;
@@ -116,7 +132,7 @@ export class CreateEventComponent {
       error: (err) => {
         this.loading = false;
         this.error = err.error?.message || 'Failed to create event.';
-      }
+      },
     });
   }
 

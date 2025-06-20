@@ -10,59 +10,87 @@ export const routes: Routes = [
     children: [
       {
         path: 'home',
-        loadComponent: () => import('./home/home.component').then(m => m.HomeComponent)
+        loadComponent: () =>
+          import('./home/home.component').then((m) => m.HomeComponent),
       },
       {
         path: 'profile',
-        loadComponent: () => import('./profile/profile.component').then(m => m.ProfileComponent)
+        loadComponent: () =>
+          import('./profile/profile.component').then((m) => m.ProfileComponent),
       },
       {
         path: 'login',
-        loadComponent: () => import('./login/login.component').then(m => m.LoginComponent),
-        canActivate: [LoginGuard]
+        loadComponent: () =>
+          import('./login/login.component').then((m) => m.LoginComponent),
+        canActivate: [LoginGuard],
       },
       {
         path: 'register',
-        loadComponent: () => import('./register/register.component').then(m => m.RegisterComponent)
+        loadComponent: () =>
+          import('./register/register.component').then(
+            (m) => m.RegisterComponent,
+          ),
       },
       {
-        path:'createPost',
-        loadComponent: () => import('./post-creation/post-creation.component').then(m => m.PostCreationComponent)
+        path: 'createPost',
+        loadComponent: () =>
+          import('./post-creation/post-creation.component').then(
+            (m) => m.PostCreationComponent,
+          ),
       },
       {
         path: 'feed',
-        loadComponent: () => import('./feed/feed.component').then(m => m.FeedComponent)
+        loadComponent: () =>
+          import('./feed/feed.component').then((m) => m.FeedComponent),
       },
       {
         path: 'feed-details/:id',
-        loadComponent: () => import('./feed-details/feed-details.component').then(m => m.FeedDetailsComponent)
+        loadComponent: () =>
+          import('./feed-details/feed-details.component').then(
+            (m) => m.FeedDetailsComponent,
+          ),
       },
       {
         path: 'events',
-        loadComponent: () => import('./events-feed/events-feed.component').then(m => m.EventsFeedComponent)
+        loadComponent: () =>
+          import('./events-feed/events-feed.component').then(
+            (m) => m.EventsFeedComponent,
+          ),
       },
       {
         path: 'events/:id',
-        loadComponent: () => import('./event-details/event-details.component').then(m => m.EventDetailsComponent)
+        loadComponent: () =>
+          import('./event-details/event-details.component').then(
+            (m) => m.EventDetailsComponent,
+          ),
       },
       {
         path: 'my-events',
-        loadComponent: () => import('./my-events/my-events.component').then(m => m.MyEventsComponent)
+        loadComponent: () =>
+          import('./my-events/my-events.component').then(
+            (m) => m.MyEventsComponent,
+          ),
       },
       {
         path: 'edit-event/:id',
-        loadComponent: () => import('./edit-event/edit-event.component').then(m => m.EditEventComponent)
+        loadComponent: () =>
+          import('./edit-event/edit-event.component').then(
+            (m) => m.EditEventComponent,
+          ),
       },
       {
         path: 'create-event',
-        loadComponent: () => import('./create-event/create-event.component').then(m => m.CreateEventComponent),
+        loadComponent: () =>
+          import('./create-event/create-event.component').then(
+            (m) => m.CreateEventComponent,
+          ),
         // canActivate: [AuthGuard]
       },
       {
         path: '',
         redirectTo: 'home',
-        pathMatch: 'full'
-      }
-    ]
-  }
+        pathMatch: 'full',
+      },
+    ],
+  },
 ];

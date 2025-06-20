@@ -1,34 +1,40 @@
 <!-- profile.component.html -->
- <div class="bg-white shadow-sm px-4 py-3 flex items-center">
-      <button (click)="goBack()" class="mr-3 p-1">
-        <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-        </svg>
-      </button>
-      <h1 class="text-xl font-semibold text-gray-800">Go Back</h1>
-  </div>
+<div class="bg-white shadow-sm px-4 py-3 flex items-center">
+  <button (click)="goBack()" class="mr-3 p-1">
+    <svg
+      class="w-6 h-6 text-gray-700"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M15 19l-7-7 7-7"
+      ></path>
+    </svg>
+  </button>
+  <h1 class="text-xl font-semibold text-gray-800">Go Back</h1>
+</div>
 <div class="min-h-screen bg-gray-50 p-4">
   <!-- Authenticated User Profile -->
   <div *ngIf="isAuthenticated && currentUser" class="max-w-md mx-auto">
     <div class="bg-white rounded-2xl shadow-lg p-6 mb-4">
       <div class="flex items-center space-x-4 mb-6">
         <div class="relative">
-          <div *ngIf="getAvatarUrl(); else avatarInitials" 
-               class="w-20 h-20 rounded-full overflow-hidden">
-            <img [src]="getAvatarUrl()" 
-                 [alt]="currentUser.name"
-                 class="w-full h-full object-cover">
+          <div class="w-20 h-20 rounded-full overflow-hidden border-2 bg-white">
+            <img
+              [src]="getAvatarUrl()"
+              [alt]="currentUser.name"
+              class="w-full h-full object-cover"
+            />
           </div>
-          <ng-template #avatarInitials>
-            <div class="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span class="text-white text-xl font-bold">
-                {{ getAvatarInitials(currentUser!.name) }}
-              </span>
-            </div>
-          </ng-template>
         </div>
         <div class="flex-1">
-          <h2 class="text-2xl font-bold text-gray-800">{{ currentUser.name }}</h2>
+          <h2 class="text-2xl font-bold text-gray-800">
+            {{ currentUser.name }}
+          </h2>
           <p class="text-gray-600 capitalize">{{ currentUser.role }}</p>
           <p class="text-sm text-gray-500">{{ currentUser.email }}</p>
         </div>
@@ -44,8 +50,16 @@
       <div *ngIf="currentUser.location" class="mb-4">
         <h3 class="text-sm font-semibold text-gray-700 mb-2">Location</h3>
         <div class="flex items-center space-x-2">
-          <svg class="w-4 h-4 text-gray-500" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"></path>
+          <svg
+            class="w-4 h-4 text-gray-500"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
+              clip-rule="evenodd"
+            ></path>
           </svg>
           <span class="text-gray-600 text-sm">{{ currentUser.location }}</span>
         </div>
@@ -53,23 +67,31 @@
     </div>
 
     <!-- Children Section -->
-    <div *ngIf="currentUser.children && currentUser.children.length > 0" 
-         class="bg-white rounded-2xl shadow-lg p-6 mb-4">
+    <div
+      *ngIf="currentUser.children && currentUser.children.length > 0"
+      class="bg-white rounded-2xl shadow-lg p-6 mb-4"
+    >
       <h3 class="text-lg font-semibold text-gray-800 mb-4">Children</h3>
       <div class="space-y-3">
-        <div *ngFor="let child of currentUser.children" 
-             class="bg-gray-50 rounded-xl p-4">
+        <div
+          *ngFor="let child of currentUser.children"
+          class="bg-gray-50 rounded-xl p-4"
+        >
           <div class="flex justify-between items-start mb-2">
             <h4 class="font-medium text-gray-800">{{ child.name }}</h4>
-            <span class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+            <span
+              class="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full"
+            >
               {{ child.age }} years
             </span>
           </div>
           <div *ngIf="child.interests && child.interests.length > 0">
             <p class="text-xs text-gray-600 mb-2">Interests:</p>
             <div class="flex flex-wrap gap-1">
-              <span *ngFor="let interest of child.interests" 
-                    class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
+              <span
+                *ngFor="let interest of child.interests"
+                class="bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full"
+              >
                 {{ interest }}
               </span>
             </div>
@@ -80,12 +102,18 @@
 
     <!-- My Events Button -->
     <div class="mt-4 mb-4 flex justify-end">
-      <a routerLink="/my-events" class="btn bg-orange-500 text-white font-semibold rounded px-6 py-2 text-base hover:bg-orange-600 focus:ring-2 focus:ring-orange-400 focus:outline-none transition min-w-[100px]">My Events</a>
+      <a
+        routerLink="/my-events"
+        class="btn bg-orange-500 text-white font-semibold rounded px-6 py-2 text-base hover:bg-orange-600 focus:ring-2 focus:ring-orange-400 focus:outline-none transition min-w-[100px]"
+        >My Events</a
+      >
     </div>
 
     <!-- Logout Button -->
-    <button (click)="logout()" 
-            class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-xl transition-colors">
+    <button
+      (click)="logout()"
+      class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 px-4 rounded-xl transition-colors"
+    >
       Logout
     </button>
   </div>
@@ -94,22 +122,38 @@
   <div *ngIf="!isAuthenticated" class="max-w-md mx-auto">
     <div class="bg-white rounded-2xl shadow-lg p-8 text-center">
       <div class="mb-6">
-        <div class="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
-          <svg class="w-12 h-12 text-white" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+        <div
+          class="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center"
+        >
+          <svg
+            class="w-12 h-12 text-white"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
+              clip-rule="evenodd"
+            ></path>
           </svg>
         </div>
         <h2 class="text-2xl font-bold text-gray-800 mb-2">Welcome!</h2>
-        <p class="text-gray-600">Please sign in to continue or create a new account</p>
+        <p class="text-gray-600">
+          Please sign in to continue or create a new account
+        </p>
       </div>
 
       <div class="space-y-4">
-        <button (click)="navigateToLogin()" 
-                class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-xl transition-colors">
+        <button
+          (click)="navigateToLogin()"
+          class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-xl transition-colors"
+        >
           Sign In
         </button>
-        <button (click)="navigateToRegister()" 
-                class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-xl transition-colors">
+        <button
+          (click)="navigateToRegister()"
+          class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-medium py-3 px-4 rounded-xl transition-colors"
+        >
           Create Account
         </button>
       </div>
@@ -117,14 +161,29 @@
   </div>
 
   <!-- Logout Success Modal -->
-  <div *ngIf="showLogoutModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+  <div
+    *ngIf="showLogoutModal"
+    class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+  >
     <div class="bg-white rounded-2xl p-8 max-w-sm w-full mx-auto text-center">
-      <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-        <svg class="w-8 h-8 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+      <div
+        class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"
+      >
+        <svg
+          class="w-8 h-8 text-green-500"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+            clip-rule="evenodd"
+          ></path>
         </svg>
       </div>
-      <h3 class="text-xl font-semibold text-gray-800 mb-2">Logout Successful!</h3>
+      <h3 class="text-xl font-semibold text-gray-800 mb-2">
+        Logout Successful!
+      </h3>
       <p class="text-gray-600 mb-4">You have been logged out.</p>
     </div>
   </div>

@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { resolveImageUrl } from '../utils';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
-import { BottomNavComponent } from "../bottom-nav/bottom-nav.component";
+import { BottomNavComponent } from '../bottom-nav/bottom-nav.component';
 import { AuthService } from '../auth.service';
 
 @Component({
@@ -27,7 +27,12 @@ export class EventsFeedComponent implements OnInit {
   limit = 10;
   allLoaded = false;
 
-  constructor(private eventService: EventService, private router: Router, private sanitizer: DomSanitizer, private authService: AuthService) {}
+  constructor(
+    private eventService: EventService,
+    private router: Router,
+    private sanitizer: DomSanitizer,
+    private authService: AuthService,
+  ) {}
 
   ngOnInit() {
     this.events = [];
@@ -64,7 +69,7 @@ export class EventsFeedComponent implements OnInit {
       error: () => {
         this.loading = false;
         if (!loadMore) this.events = [];
-      }
+      },
     });
     if (loadMore) this.page++;
   }
@@ -83,7 +88,7 @@ export class EventsFeedComponent implements OnInit {
       },
       error: () => {
         this.pastEvents = [];
-      }
+      },
     });
   }
 
@@ -103,7 +108,11 @@ export class EventsFeedComponent implements OnInit {
       // Default duration to 1 hour if missing or invalid
       const duration = Number(event.duration) > 0 ? Number(event.duration) : 1;
       const end = new Date(start.getTime() + duration * 60 * 60 * 1000);
-      console.log(`Event: ${event.title} | Now: ${now.toISOString()} | Start: ${start.toISOString()} | End: ${end.toISOString()} | Duration: ${duration}`);
+      console.log(
+        `Event: ${
+          event.title
+        } | Now: ${now.toISOString()} | Start: ${start.toISOString()} | End: ${end.toISOString()} | Duration: ${duration}`,
+      );
       if (now < start) {
         this.upcomingEvents.push(event);
       } else if (now >= start && now < end) {
@@ -129,20 +138,28 @@ export class EventsFeedComponent implements OnInit {
   }
 
   sortEvents(sortBy: string = this.sortBy) {
-    const sortFn = (a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime();
+    const sortFn = (a: Event, b: Event) =>
+      new Date(a.date).getTime() - new Date(b.date).getTime();
     this.ongoingEvents.sort(sortFn);
     this.upcomingEvents.sort(sortFn);
-    this.pastEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    this.pastEvents.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
     // ...existing code for popularity/recent if needed...
   }
 
   isEventFull(event: any): boolean {
     if (!event.maxAttendees || !event.attendees) return false;
-    return (event.attendees.filter((a: any) => a.status === 'Going').length >= event.maxAttendees);
+    return (
+      event.attendees.filter((a: any) => a.status === 'Going').length >=
+      event.maxAttendees
+    );
   }
 
   getRSVPCount(event: any): number {
-    return event.attendees ? event.attendees.filter((a: any) => a.status === 'Going').length : 0;
+    return event.attendees
+      ? event.attendees.filter((a: any) => a.status === 'Going').length
+      : 0;
   }
 
   goBack() {
@@ -150,11 +167,15 @@ export class EventsFeedComponent implements OnInit {
   }
 
   getCoverImageUrl(event: any): SafeUrl {
-    return this.sanitizer.bypassSecurityTrustUrl(resolveImageUrl(event.coverImageUrl, ''));
+    return this.sanitizer.bypassSecurityTrustUrl(
+      resolveImageUrl(event.coverImageUrl, ''),
+    );
   }
 
   getHostAvatarUrl(avatar?: string): SafeUrl {
-    return this.sanitizer.bypassSecurityTrustUrl(resolveImageUrl(avatar || '', '/assets/user-img.png'));
+    return this.sanitizer.bypassSecurityTrustUrl(
+      resolveImageUrl(avatar || '', '/assets/user-img.png'),
+    );
   }
 
   trackByEventId(index: number, event: Event) {
@@ -163,7 +184,9 @@ export class EventsFeedComponent implements OnInit {
 
   onCreateEvent() {
     if (!this.authService.currentUser) {
-      this.router.navigate(['/login'], { queryParams: { redirect: '/create-event' } });
+      this.router.navigate(['/login'], {
+        queryParams: { redirect: '/create-event' },
+      });
     } else {
       this.router.navigate(['/create-event']);
     }

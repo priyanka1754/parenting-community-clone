@@ -7,6 +7,7 @@ import { AuthService } from '../auth.service';
 import { PostService } from './postCreation.service';
 import { User, PostData } from '../models';
 import { isPlatformBrowser } from '@angular/common';
+import { resolveImageUrl } from '../utils';
 
 @Component({
   selector: 'app-post-creation',
@@ -34,7 +35,7 @@ export class PostCreationComponent implements OnInit {
     'Education',
     'Toys & Games',
     'Mental Wellness',
-    'General Thoughts'
+    'General Thoughts',
   ];
 
   ngOnInit() {
@@ -141,7 +142,9 @@ export class PostCreationComponent implements OnInit {
       let postType = 'thought';
 
       if (this.selectedFile) {
-        const uploadResult = await this.postService.uploadMedia(this.selectedFile).toPromise();
+        const uploadResult = await this.postService
+          .uploadMedia(this.selectedFile)
+          .toPromise();
         if (!uploadResult || !uploadResult.url) {
           throw new Error('Upload failed.');
         }
@@ -158,14 +161,13 @@ export class PostCreationComponent implements OnInit {
         mediaType: this.mediaType,
         mediaUrl: mediaUrl,
         mediaSize: mediaSize,
-        postType: postType
+        postType: postType,
       };
 
       await this.postService.createPost(postData).toPromise();
 
       this.showSuccess('Your post has been shared successfully!');
       this.router.navigate(['/']);
-
     } catch (error: unknown) {
       console.error('Error creating post:', error as any);
       this.showError('Failed to create post. Please try again.');
@@ -181,36 +183,18 @@ export class PostCreationComponent implements OnInit {
   private showSuccess(message: string) {
     this.snackBar.open(message, 'Close', {
       duration: 3000,
-      panelClass: ['success-snackbar']
+      panelClass: ['success-snackbar'],
     });
   }
 
   private showError(message: string) {
     this.snackBar.open(message, 'Close', {
       duration: 5000,
-      panelClass: ['error-snackbar']
+      panelClass: ['error-snackbar'],
     });
   }
 
-  getUserAvatarUrl(): string | null {
-    if (this.user && this.user.avatar) {
-      if (this.user.avatar.startsWith('/uploads/avatar')) {
-        return `http://localhost:3000${this.user.avatar}`;
-      }
-      if (this.user.avatar.startsWith('uploads/avatar')) {
-        return `http://localhost:3000/${this.user.avatar}`;
-      }
-      if (this.user.avatar.startsWith('http')) {
-        return this.user.avatar;
-      }
-    }
-    return null;
-  }
-
-  getAvatarInitials(name: string): string {
-    if (!name) return '';
-    const parts = name.trim().split(' ');
-    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
-    return (parts[0][0] + parts[1][0]).toUpperCase();
+  getUserAvatarUrl(): string {
+    return resolveImageUrl(this.user?.avatar || '', '/assets/user-img.png');
   }
 }

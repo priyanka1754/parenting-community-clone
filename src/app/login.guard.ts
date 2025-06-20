@@ -8,7 +8,7 @@ export const LoginGuard: CanActivateFn = (route, state) => {
   const router = inject(Router);
 
   return authService.authLoading$.pipe(
-    filter(loading => !loading),  // Wait for authLoading$ to become false
+    filter((loading) => !loading), // Wait for authLoading$ to become false
     take(1),
     map(() => {
       if (authService.isAuthenticated) {
@@ -17,6 +17,6 @@ export const LoginGuard: CanActivateFn = (route, state) => {
         return false;
       }
       return true;
-    })
+    }),
   );
 };

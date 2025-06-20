@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { HomeComponent } from "./home/home.component";
+import { HomeComponent } from './home/home.component';
 import { AuthService } from './auth.service';
 import { CommonModule } from '@angular/common';
 
@@ -14,13 +14,12 @@ export class AppComponent {
   title = 'parents';
   constructor(public authService: AuthService) {}
 
-ngOnInit() {
-  // this.authService.authLoading$.subscribe((loading) => {
-  //   console.log('🟡 authLoading:', loading);
-  // });
-console.log('AppComponent constructor');
+  ngOnInit() {
+    // this.authService.authLoading$.subscribe((loading) => {
+    //   console.log('🟡 authLoading:', loading);
+    // });
+    console.log('AppComponent constructor');
 
-  // this.authService.ensureAuthOnStartup();
-}
-
+    // this.authService.ensureAuthOnStartup();
+  }
 }

@@ -45,7 +45,7 @@ export interface Post {
   mediaUrl?: string;
   mediaSize?: number;
   postType?: string;
-  postId?:string;
+  postId?: string;
 }
 
 export interface PostData {

@@ -35,7 +35,8 @@ export const appConfig: ApplicationConfig = {
     // ✅ Run auth logic before app initializes
     {
       provide: APP_INITIALIZER,
-      useFactory: (authService: AuthService) => () => authService.ensureAuthOnStartup(),
+      useFactory: (authService: AuthService) => () =>
+        authService.ensureAuthOnStartup(),
       deps: [AuthService],
       multi: true,
     },

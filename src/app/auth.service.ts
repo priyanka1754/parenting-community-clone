@@ -43,7 +43,10 @@ export class AuthService {
 
   private PROFILE_CACHE_KEY = 'user_profile_cache';
 
-  constructor(private http: HttpClient, @Inject(PLATFORM_ID) private platformId: Object) {
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: Object,
+  ) {
     // this.checkAuthStatus();
   }
 
@@ -60,7 +63,10 @@ export class AuthService {
   }
 
   // Utility: Get profile cache with timestamp
-  private getProfileCacheWithTimestamp(): { user: User, cachedAt: number } | null {
+  private getProfileCacheWithTimestamp(): {
+    user: User;
+    cachedAt: number;
+  } | null {
     if (isPlatformBrowser(this.platformId)) {
       const cached = localStorage.getItem(this.PROFILE_CACHE_KEY);
       if (cached) {
@@ -117,81 +123,83 @@ export class AuthService {
       error: () => {
         this.logout();
         this.authLoadingSubject.next(false);
-      }
+      },
     });
   }
 
   // Call this on app start (e.g., in app.component.ts)
   ensureAuthOnStartup(): Promise<void> {
-  return new Promise<void>((resolve) => {
-    if (!isPlatformBrowser(this.platformId)) {
-      // SSR or prerender - skip auth logic
-      this.authLoadingSubject.next(false);
-      return resolve();
-    }
-
-    const token = localStorage.getItem('auth_token');
-    console.log('[AuthService] ensureAuthOnStartup running, token =', token);
-
-    if (!token || this.isTokenExpired(token)) {
-      this.authLoadingSubject.next(false);
-      return resolve();
-    }
-
-    this.tokenSubject.next(token);
-
-    const cachedUser = this.getValidCachedUser(token);
-    if (cachedUser) {
-      this.currentUserSubject.next(cachedUser);
-      this.isAuthenticatedSubject.next(true);
-    }
-
-    this.http.get(`api/parenting/users/profile`).subscribe({
-      next: (res: any) => {
-        this.currentUserSubject.next(res.user);
-        this.isAuthenticatedSubject.next(true);
-        console.log('[AuthService] Profile fetched ✅:', res);
-        this.setProfileCache(res.user);
+    return new Promise<void>((resolve) => {
+      if (!isPlatformBrowser(this.platformId)) {
+        // SSR or prerender - skip auth logic
         this.authLoadingSubject.next(false);
-        resolve();
-      },
-      error: (err) => {
-        console.error('[AuthService] Error fetching profile ❌:', err);
-        this.logout();
-        this.authLoadingSubject.next(false);
-        resolve();
+        return resolve();
       }
+
+      const token = localStorage.getItem('auth_token');
+      console.log('[AuthService] ensureAuthOnStartup running, token =', token);
+
+      if (!token || this.isTokenExpired(token)) {
+        this.authLoadingSubject.next(false);
+        return resolve();
+      }
+
+      this.tokenSubject.next(token);
+
+      const cachedUser = this.getValidCachedUser(token);
+      if (cachedUser) {
+        this.currentUserSubject.next(cachedUser);
+        this.isAuthenticatedSubject.next(true);
+      }
+
+      this.http.get(`api/parenting/users/profile`).subscribe({
+        next: (res: any) => {
+          this.currentUserSubject.next(res.user);
+          this.isAuthenticatedSubject.next(true);
+          console.log('[AuthService] Profile fetched ✅:', res);
+          this.setProfileCache(res.user);
+          this.authLoadingSubject.next(false);
+          resolve();
+        },
+        error: (err) => {
+          console.error('[AuthService] Error fetching profile ❌:', err);
+          this.logout();
+          this.authLoadingSubject.next(false);
+          resolve();
+        },
+      });
     });
-  });
-}
-
-
-
+  }
 
   // ✅ Login and store token
   login(credentials: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`/api/parenting/users/login`, credentials).pipe(
-      tap((response) => {
-        if (response.token) {
-          if (isPlatformBrowser(this.platformId)) {
-            localStorage.setItem('auth_token', response.token);
+    return this.http
+      .post<AuthResponse>(`/api/parenting/users/login`, credentials)
+      .pipe(
+        tap((response) => {
+          if (response.token) {
+            if (isPlatformBrowser(this.platformId)) {
+              localStorage.setItem('auth_token', response.token);
+            }
+            this.tokenSubject.next(response.token);
+            this.getProfile().subscribe({
+              next: (res) => {
+                this.currentUserSubject.next(res.user);
+                this.isAuthenticatedSubject.next(true);
+              },
+              error: () => this.logout(),
+            });
           }
-          this.tokenSubject.next(response.token);
-          this.getProfile().subscribe({
-            next: (res) => {
-              this.currentUserSubject.next(res.user);
-              this.isAuthenticatedSubject.next(true);
-            },
-            error: () => this.logout()
-          });
-        }
-      })
-    );
+        }),
+      );
   }
 
   // ✅ Register user
   register(userData: RegisterRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`/api/parenting/users/register`, userData);
+    return this.http.post<AuthResponse>(
+      `/api/parenting/users/register`,
+      userData,
+    );
   }
 
   // ✅ Logout and reset all state
@@ -226,22 +234,29 @@ export class AuthService {
       map((res) => res.user),
       tap((user) => {
         this.currentUserSubject.next(user);
-      })
+      }),
     );
   }
 
   // ✅ Get full profile from backend
   getProfile(): Observable<{ success: boolean; user: User }> {
-    return this.http.get<{ success: boolean; user: User }>(`/api/parenting/users/profile`);
+    return this.http.get<{ success: boolean; user: User }>(
+      `/api/parenting/users/profile`,
+    );
   }
 
   // ✅ Update user profile
   updateProfile(userData: Partial<User>): Observable<User> {
-    return this.http.put<{ success: boolean; user: User }>(`/api/parenting/users/profile`, userData).pipe(
-      map((res) => res.user),
-      tap((user) => {
-        this.currentUserSubject.next(user);
-      })
-    );
+    return this.http
+      .put<{
+        success: boolean;
+        user: User;
+      }>(`/api/parenting/users/profile`, userData)
+      .pipe(
+        map((res) => res.user),
+        tap((user) => {
+          this.currentUserSubject.next(user);
+        }),
+      );
   }
 }

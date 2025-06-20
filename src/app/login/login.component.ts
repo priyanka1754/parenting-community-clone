@@ -8,8 +8,8 @@ import { AuthService, LoginRequest } from '../auth.service';
 
 @Component({
   selector: 'app-login',
-    standalone: true,
-    imports: [ReactiveFormsModule, CommonModule],
+  standalone: true,
+  imports: [ReactiveFormsModule, CommonModule],
   templateUrl: './login.component.html',
 })
 export class LoginComponent implements OnInit {
@@ -22,20 +22,21 @@ export class LoginComponent implements OnInit {
     private fb: FormBuilder,
     public authService: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
   ) {
     this.loginForm = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required]]
+      password: ['', [Validators.required]],
     });
   }
 
   ngOnInit(): void {
     // Only redirect if already authenticated and currently on login page
-    this.authService.isAuthenticated$.subscribe(isAuth => {
+    this.authService.isAuthenticated$.subscribe((isAuth) => {
       if (isAuth) {
         // Get returnUrl from query params or default to /profile
-        const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/profile';
+        const returnUrl =
+          this.route.snapshot.queryParamMap.get('returnUrl') || '/profile';
         this.router.navigate([returnUrl]);
       }
     });
@@ -47,7 +48,8 @@ export class LoginComponent implements OnInit {
       this.errorMessage = '';
 
       const credentials: LoginRequest = this.loginForm.value;
-      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') || '/profile';
+      const returnUrl =
+        this.route.snapshot.queryParamMap.get('returnUrl') || '/profile';
       this.authService.login(credentials).subscribe({
         next: (response) => {
           this.isLoading = false;
@@ -56,8 +58,10 @@ export class LoginComponent implements OnInit {
         },
         error: (error) => {
           this.isLoading = false;
-          this.errorMessage = error.error?.message || 'Login failed. Please check your credentials.';
-        }
+          this.errorMessage =
+            error.error?.message ||
+            'Login failed. Please check your credentials.';
+        },
       });
     } else {
       this.markFormGroupTouched();
@@ -65,7 +69,7 @@ export class LoginComponent implements OnInit {
   }
 
   private markFormGroupTouched(): void {
-    Object.keys(this.loginForm.controls).forEach(field => {
+    Object.keys(this.loginForm.controls).forEach((field) => {
       const control = this.loginForm.get(field);
       control?.markAsTouched({ onlySelf: true });
     });
