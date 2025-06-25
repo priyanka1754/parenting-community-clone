@@ -87,6 +87,27 @@ export const routes: Routes = [
         // canActivate: [AuthGuard]
       },
       {
+        path: 'communities',
+        loadComponent: () =>
+          import('./communities/community-list.componenet').then(
+            (m) => m.CommunityListComponent,
+          ),
+      },
+      {
+        path: 'communities/:id',
+        loadComponent: () =>
+          import('./communities/community-details.component').then(
+            (m) => m.CommunityDetailComponent,
+          ),
+      },
+      {
+        path: 'create-community',
+        loadComponent: () =>
+          import('./communities/create-community.component').then(
+            (m) => m.CreateCommunityComponent,
+          ),
+      },
+      {
         path: '',
         redirectTo: 'home',
         pathMatch: 'full',
