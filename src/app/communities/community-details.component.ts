@@ -30,11 +30,12 @@ import { Community, Group } from '../models';
                     *ngIf="community.image" 
                     [src]="getFullImageUrl(community.image)" 
                     [alt]="community.title"
-                    class="w-full h-full object-cover">
+                    class="w-full h-full object-cover"
+                    (error)="onImageError($event)">
                   <div 
                     *ngIf="!community.image"
                     class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500">
-                    <span class="text-white text-4xl lg:text-6xl font-bold">{{ community.title.charAt(0) }}</span>
+                    <span class="text-white text-4xl lg:text-6xl font-bold">{{ community.title.charAt(0) || 'C' }}</span>
                   </div>
                 </div>
               </div>
@@ -43,9 +44,9 @@ import { Community, Group } from '../models';
               <div class="flex-1">
                 <div class="flex items-start justify-between mb-4">
                   <div>
-                    <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{{ community.title }}</h1>
+                    <h1 class="text-3xl lg:text-4xl font-bold text-gray-900 mb-2">{{ community.title || 'Untitled Community' }}</h1>
                     <div class="flex items-center gap-4 text-sm text-gray-600 mb-2">
-                      <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">{{ community.category }}</span>
+                      <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full">{{ community.category || 'General' }}</span>
                       <span *ngIf="community.tagline" class="italic">{{ community.tagline }}</span>
                     </div>
                   </div>
@@ -87,7 +88,7 @@ import { Community, Group } from '../models';
 
                 <!-- Description -->
                 <div class="prose max-w-none">
-                  <p class="text-gray-700 leading-relaxed">{{ community.longDescription }}</p>
+                  <p class="text-gray-700 leading-relaxed">{{ community.longDescription  || 'No description available.' }}</p>
                 </div>
               </div>
             </div>
@@ -128,9 +129,9 @@ import { Community, Group } from '../models';
           </div>
 
           <!-- Groups Grid -->
-          <div *ngIf="!groupsLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div *ngIf="!groupsLoading && groups && groups.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div 
-              *ngFor="let group of groups" 
+              *ngFor="let group of groups; trackBy: trackByGroupId" 
               class="bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow cursor-pointer"
               (click)="navigateToGroup(group.id)">
               
@@ -138,34 +139,39 @@ import { Community, Group } from '../models';
               <div class="h-32 bg-gray-200 rounded-t-lg overflow-hidden">
                 <img 
                   *ngIf="group.image" 
-                  [src]="group.image" 
-                  [alt]="group.title"
-                  class="w-full h-full object-cover">
+                  [src]="getFullImageUrl(group.image)" 
+                  [alt]="group.title || 'Group Image'"
+                  class="w-full h-full object-cover"
+                  (error)="onGroupImageError($event, group)">
                 <div 
                   *ngIf="!group.image"
                   class="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-400 to-blue-500">
-                  <span class="text-white text-2xl font-bold">{{ group.title.charAt(0) }}</span>
+                  <span class="text-white text-2xl font-bold">{{ getGroupInitial(group) }}</span>
                 </div>
               </div>
 
               <!-- Group Content -->
               <div class="p-4">
                 <div class="flex items-start justify-between mb-2">
-                  <h3 class="text-lg font-semibold text-gray-900 line-clamp-1">{{ group.title }}</h3>
+                  <h3 class="text-lg font-semibold text-gray-900 line-clamp-1 flex-1 pr-2">
+                    {{ group.title || 'Untitled Group' }}
+                  </h3>
                   <span 
-                    [class]="getGroupTypeClass(group.type)"
-                    class="text-xs px-2 py-1 rounded-full">
-                    {{ group.type }}
+                    [class]="getGroupTypeClass(group.type || 'Public')"
+                    class="text-xs px-2 py-1 rounded-full whitespace-nowrap">
+                    {{ group.type || 'Public' }}
                   </span>
                 </div>
                 
-                <p class="text-gray-600 text-sm mb-3 line-clamp-2">{{ group.intro }}</p>
+                <p class="text-gray-600 text-sm mb-3 line-clamp-2">
+                  {{ group.intro || 'No description available.' }}
+                </p>
 
                 <!-- Group Stats -->
                 <div class="flex items-center justify-between text-sm text-gray-500">
                   <div class="flex items-center space-x-3">
-                    <span>{{ group.memberCount }} members</span>
-                    <span>{{ group.postCount }} posts</span>
+                    <span>{{ group.memberCount || 0 }} members</span>
+                    <span>{{ group.postCount || 0 }} posts</span>
                   </div>
                   <div class="flex items-center">
                     <span *ngIf="group.userMembership" 
@@ -180,10 +186,12 @@ import { Community, Group } from '../models';
           </div>
 
           <!-- Empty Groups State -->
-          <div *ngIf="!groupsLoading && groups.length === 0" class="text-center py-12">
+          <div *ngIf="!groupsLoading && (!groups || groups.length === 0)" class="text-center py-12">
             <div class="text-gray-400 text-6xl mb-4">👥</div>
             <h3 class="text-lg font-medium text-gray-900 mb-2">No groups found</h3>
-            <p class="text-gray-600 mb-4">Be the first to create a group in this community!</p>
+            <p class="text-gray-600 mb-4">
+              {{ selectedGroupType === 'All' ? 'Be the first to create a group in this community!' : 'No ' + selectedGroupType.toLowerCase() + ' groups found. Try a different filter.' }}
+            </p>
             <button 
               *ngIf="isLoggedIn"
               (click)="createGroup()"
@@ -200,21 +208,22 @@ import { Community, Group } from '../models';
               <!-- Moderators -->
               <div>
                 <h3 class="text-xl font-semibold text-gray-900 mb-4">Moderators</h3>
-                <div *ngIf="community.moderators.length > 0" class="space-y-3">
+                <div *ngIf="community.moderators && community.moderators.length > 0" class="space-y-3">
                   <div 
                     *ngFor="let moderator of community.moderators" 
                     class="flex items-center space-x-3">
                     <img 
-                      [src]="moderator.userId.avatar || '/assets/default-avatar.png'"
-                      [alt]="moderator.userId.name"
-                      class="w-10 h-10 rounded-full">
+                      [src]="getUserAvatar(moderator)"
+                      [alt]="getUserName(moderator)"
+                      class="w-10 h-10 rounded-full"
+                      (error)="onAvatarError($event)">
                     <div>
-                      <p class="font-medium text-gray-900">{{ moderator.userId.name }}</p>
+                      <p class="font-medium text-gray-900">{{ getUserName(moderator) }}</p>
                       <p class="text-sm text-gray-500">Moderator since {{ formatDate(moderator.assignedAt) }}</p>
                     </div>
                   </div>
                 </div>
-                <p *ngIf="community.moderators.length === 0" class="text-gray-500">No moderators assigned</p>
+                <p *ngIf="!community.moderators || community.moderators.length === 0" class="text-gray-500">No moderators assigned</p>
               </div>
 
               <!-- Experts -->
@@ -233,11 +242,12 @@ import { Community, Group } from '../models';
                     *ngFor="let expert of approvedExperts" 
                     class="flex items-center space-x-3">
                     <img 
-                      [src]="expert.userId.avatar || '/assets/default-avatar.png'"
-                      [alt]="expert.userId.name"
-                      class="w-10 h-10 rounded-full">
+                      [src]="getUserAvatar(expert)"
+                      [alt]="getUserName(expert)"
+                      class="w-10 h-10 rounded-full"
+                      (error)="onAvatarError($event)">
                     <div>
-                      <p class="font-medium text-gray-900">{{ expert.userId.name }}</p>
+                      <p class="font-medium text-gray-900">{{ getUserName(expert) }}</p>
                       <p class="text-sm text-gray-500">Expert since {{ formatDate(expert.approvedAt!) }}</p>
                     </div>
                   </div>
@@ -247,6 +257,18 @@ import { Community, Group } from '../models';
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="!loading && !community" class="text-center py-12">
+        <div class="text-gray-400 text-6xl mb-4">❌</div>
+        <h3 class="text-lg font-medium text-gray-900 mb-2">Community not found</h3>
+        <p class="text-gray-600 mb-4">The community you're looking for doesn't exist or has been removed.</p>
+        <button 
+          (click)="router.navigate(['/communities'])"
+          class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+          Browse Communities
+        </button>
       </div>
     </div>
   `,
@@ -279,7 +301,7 @@ export class CommunityDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
+    public router: Router,
     private communityService: CommunityService,
     private groupService: GroupService,
     private authService: AuthService
@@ -310,6 +332,7 @@ export class CommunityDetailComponent implements OnInit {
       next: (community: any) => {
         this.community = community;
         this.loading = false;
+        console.log('Community loaded:', community); // Debug log
       },
       error: (error: any) => {
         console.error('Error loading community:', error);
@@ -326,12 +349,15 @@ export class CommunityDetailComponent implements OnInit {
     };
 
     this.groupService.getGroupsByCommunity(communityId, params).subscribe({
-      next: (groups: Group[]) => {
-        this.groups = groups;
+      next: (response: any) => {
+        // Handle both array response and object with groups property
+        this.groups = Array.isArray(response) ? response : (response.groups || response.data || []);
         this.groupsLoading = false;
+        console.log('Groups loaded:', this.groups); // Debug log
       },
       error: (error: any) => {
         console.error('Error loading groups:', error);
+        this.groups = [];
         this.groupsLoading = false;
       }
     });
@@ -355,17 +381,26 @@ export class CommunityDetailComponent implements OnInit {
     }
   }
 
+  trackByGroupId(index: number, group: any): any {
+    return group?.id || group?._id || index;
+  }
+
+  getGroupInitial(group: any): string {
+    const title = group?.title || group?.name || 'Group';
+    return title.charAt(0).toUpperCase();
+  }
+
   getGroupTypeClass(type: string): string {
-    switch (type) {
-      case 'Public': return 'bg-green-100 text-green-800';
-      case 'Private': return 'bg-yellow-100 text-yellow-800';
-      case 'Secret': return 'bg-red-100 text-red-800';
+    switch (type?.toLowerCase()) {
+      case 'public': return 'bg-green-100 text-green-800';
+      case 'private': return 'bg-yellow-100 text-yellow-800';
+      case 'secret': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   }
 
   getMembershipStatusClass(status: string): string {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'active': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'banned': return 'bg-red-100 text-red-800';
@@ -374,15 +409,32 @@ export class CommunityDetailComponent implements OnInit {
   }
 
   get approvedExperts() {
-    return this.community?.experts.filter((expert: { status: string; }) => expert.status === 'approved') || [];
+    return this.community?.experts?.filter((expert: { status: string; }) => expert.status === 'approved') || [];
+  }
+
+  getUserName(user: any): string {
+    if (typeof user === 'string') return user;
+    return user?.userId?.name || user?.name || user?.username || 'Unknown User';
+  }
+
+  getUserAvatar(user: any): string {
+    const avatar = user?.userId?.avatar || user?.avatar || user?.profilePicture;
+    return avatar || '/assets/user-avatar.png';
   }
 
   formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return 'Unknown';
+    try {
+      return new Date(dateString).toLocaleDateString();
+    } catch {
+      return 'Invalid Date';
+    }
   }
 
   navigateToGroup(groupId: string) {
-    this.router.navigate(['/groups', groupId]);
+    if (groupId) {
+      this.router.navigate(['/groups', groupId]);
+    }
   }
 
   createGroup() {
@@ -421,10 +473,25 @@ export class CommunityDetailComponent implements OnInit {
   getFullImageUrl(imagePath: string): string {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
+    // If imagePath starts with 'localhost:3000', add 'http://' in front
+    if (imagePath.startsWith('localhost:3000')) return `http://${imagePath}`;
     if (imagePath.startsWith('/uploads')) return `http://localhost:3000${imagePath}`;
-    return `http://localhost:3000/${
-      imagePath.startsWith('uploads') ? imagePath : 'uploads/' + imagePath
-    }`;
+    return `http://localhost:3000/${imagePath.startsWith('uploads') ? imagePath : 'uploads/' + imagePath}`;
+  }
+
+  onImageError(event: any) {
+    console.log('Community image failed to load');
+    event.target.style.display = 'none';
+  }
+
+  onGroupImageError(event: any, group: any) {
+    console.log('Group image failed to load for:', group?.title || group?.name);
+    event.target.style.display = 'none';
+    // Mark this group as having an image error so fallback div shows
+    group.imageError = true;
+  }
+
+  onAvatarError(event: any) {
+    event.target.src = '/assets/user-img.png';
   }
 }
-

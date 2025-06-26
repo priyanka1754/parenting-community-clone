@@ -7,7 +7,7 @@ import { GroupPost, GroupPostData, PostComment, PostReply, UploadResponse } from
   providedIn: 'root'
 })
 export class GroupPostService {
-  private apiUrl = '/api/group-posts';
+  private apiUrl = '/api/parenting/group-posts';
 
   constructor(private http: HttpClient) {}
 

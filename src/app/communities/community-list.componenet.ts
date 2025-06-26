@@ -114,7 +114,7 @@ import { Community } from '../models';
                 <div class="flex -space-x-1">
                   <img 
                     *ngFor="let mod of community.moderators.slice(0, 3)" 
-                    [src]="mod.userId.avatar || '/assets/default-avatar.png'"
+                    [src]="mod.userId.avatar || '/assets/user-img.png'"
                     [alt]="mod.userId.name"
                     [title]="mod.userId.name"
                     class="w-6 h-6 rounded-full border-2 border-white">
@@ -246,15 +246,15 @@ export class CommunityListComponent implements OnInit {
   }
 
   navigateToCreateCommunity() {
-    this.router.navigate(['/communities/create']);
+    this.router.navigate(['/create-community']);
   }
-   getFullImageUrl(imagePath: string): string {
-    if (!imagePath) return '';
-    if (imagePath.startsWith('http')) return imagePath;
-    if (imagePath.startsWith('/uploads')) return `http://localhost:3000${imagePath}`;
-    return `http://localhost:3000/${
-      imagePath.startsWith('uploads') ? imagePath : 'uploads/' + imagePath
-    }`;
-  }
+  getFullImageUrl(imagePath: string): string {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http')) return imagePath;
+  // If imagePath starts with 'localhost:3000', add 'http://' in front
+  if (imagePath.startsWith('localhost:3000')) return `http://${imagePath}`;
+  if (imagePath.startsWith('/uploads')) return `http://localhost:3000${imagePath}`;
+  return `http://localhost:3000/${imagePath.startsWith('uploads') ? imagePath : 'uploads/' + imagePath}`;
+}
 }
 

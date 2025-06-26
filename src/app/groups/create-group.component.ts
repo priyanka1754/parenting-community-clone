@@ -147,7 +147,7 @@ import { GroupData, Community } from '../models';
                   <div class="w-32 h-32 rounded-lg overflow-hidden bg-gray-200 flex items-center justify-center">
                     <img 
                       *ngIf="groupData.image" 
-                      [src]="groupData.image" 
+                      [src]="getFullImageUrl(groupData.image)" 
                       alt="Group preview"
                       class="w-full h-full object-cover">
                     <div 
@@ -237,6 +237,16 @@ import { GroupData, Community } from '../models';
           </form>
         </div>
 
+        <!-- Success Modal -->
+        <div *ngIf="showSuccessModal" class="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
+          <div class="bg-white rounded-lg shadow-lg p-8 max-w-sm w-full text-center">
+            <div class="text-green-500 text-4xl mb-2">✔️</div>
+            <h2 class="text-xl font-semibold mb-2">Group created!</h2>
+            <p class="mb-4">Your group has been created successfully.</p>
+            <button (click)="goToCommunityDetails()" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">OK</button>
+          </div>
+        </div>
+
         <!-- Error Message -->
         <div *ngIf="errorMessage" class="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
           <div class="flex">
@@ -288,6 +298,8 @@ export class CreateGroupComponent implements OnInit {
   uploadingImage = false;
   errorMessage = '';
   loadingCommunities = false;
+  showSuccessModal = false;
+  createdGroup: any = null;
 
   constructor(
     private groupService: GroupService,
@@ -393,14 +405,13 @@ export class CreateGroupComponent implements OnInit {
 
   onSubmit() {
     if (this.creating) return;
-
     this.creating = true;
     this.errorMessage = '';
-
     this.groupService.createGroup(this.groupData).subscribe({
       next: (group) => {
         this.creating = false;
-        this.router.navigate(['/groups', group.id]);
+        this.createdGroup = group;
+        this.showSuccessModal = true;
       },
       error: (error) => {
         console.error('Error creating group:', error);
@@ -410,12 +421,25 @@ export class CreateGroupComponent implements OnInit {
     });
   }
 
+  goToCommunityDetails() {
+    this.showSuccessModal = false;
+    this.router.navigate(['/communities', this.groupData.communityId]);
+  }
+
   goBack() {
     if (this.preselectedCommunityId) {
       this.router.navigate(['/communities', this.preselectedCommunityId]);
     } else {
       this.router.navigate(['/communities']);
     }
+  }
+
+  getFullImageUrl(imagePath: string): string {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    if (imagePath.startsWith('localhost:3000')) return `http://${imagePath}`;
+    if (imagePath.startsWith('/uploads')) return `http://localhost:3000${imagePath}`;
+    return `http://localhost:3000/${imagePath.startsWith('uploads') ? imagePath : 'uploads/' + imagePath}`;
   }
 }
 

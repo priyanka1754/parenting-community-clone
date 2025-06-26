@@ -29,7 +29,7 @@ import { Group, GroupPost, PostComment } from '../models';
                 <div class="w-24 h-24 lg:w-32 lg:h-32 rounded-lg overflow-hidden bg-gray-200">
                   <img 
                     *ngIf="group.image" 
-                    [src]="group.image" 
+                    [src]="getFullImageUrl(group.image)" 
                     [alt]="group.title"
                     class="w-full h-full object-cover">
                   <div 
@@ -204,7 +204,7 @@ import { Group, GroupPost, PostComment } from '../models';
                 <div class="flex items-start justify-between mb-4">
                   <div class="flex items-center space-x-3">
                     <img 
-                      [src]="post.authorId.avatar || '/assets/default-avatar.png'"
+                      [src]="post.authorId.avatar || '/assets/user-img.png'"
                       [alt]="post.authorId.name"
                       class="w-10 h-10 rounded-full">
                     <div>
@@ -240,11 +240,11 @@ import { Group, GroupPost, PostComment } from '../models';
                     <div *ngFor="let media of post.mediaUrls" class="relative">
                       <img 
                         *ngIf="media.mediaType === 'image'"
-                        [src]="media.url" 
+                        [src]="getFullImageUrl(media.url)" 
                         class="w-full h-32 object-cover rounded-lg">
                       <video 
                         *ngIf="media.mediaType === 'video'"
-                        [src]="media.url" 
+                        [src]="getFullImageUrl(media.url)" 
                         controls
                         class="w-full h-32 object-cover rounded-lg">
                       </video>
@@ -308,7 +308,7 @@ import { Group, GroupPost, PostComment } from '../models';
                   <div *ngIf="isGroupMember" class="mb-4">
                     <div class="flex space-x-3">
                       <img 
-                        [src]="currentUser?.avatar || '/assets/default-avatar.png'"
+                        [src]="currentUser?.avatar || '/assets/user-img.png'"
                         [alt]="currentUser?.name"
                         class="w-8 h-8 rounded-full">
                       <div class="flex-1">
@@ -331,7 +331,7 @@ import { Group, GroupPost, PostComment } from '../models';
                   <div class="space-y-4">
                     <div *ngFor="let comment of post.comments" class="flex space-x-3">
                       <img 
-                        [src]="comment.userId.avatar || '/assets/default-avatar.png'"
+                        [src]="comment.userId.avatar || '/assets/user-img.png'"
                         [alt]="comment.userId.name"
                         class="w-8 h-8 rounded-full">
                       <div class="flex-1">
@@ -637,5 +637,13 @@ export class GroupDetailComponent implements OnInit {
   scrollToCreatePost() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-}
 
+  // Add the missing getFullImageUrl method
+  getFullImageUrl(imagePath: string): string {
+    if (!imagePath) return '';
+    if (imagePath.startsWith('http')) return imagePath;
+    if (imagePath.startsWith('localhost:3000')) return `http://${imagePath}`;
+    if (imagePath.startsWith('/uploads')) return `http://localhost:3000${imagePath}`;
+    return `http://localhost:3000/${imagePath.startsWith('uploads') ? imagePath : 'uploads/' + imagePath}`;
+  }
+}
