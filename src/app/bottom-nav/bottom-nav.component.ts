@@ -20,12 +20,14 @@ import { Subscription } from 'rxjs';
           <i class="fas fa-home text-xl mb-1"></i>
           <span>Home</span>
         </a>
-        <div
-          class="flex flex-col items-center text-gray-600 hover:text-blue-600"
+        <a
+          [routerLink]="['/communities']"
+          [ngClass]="isActive('/communities') ? 'text-blue-600' : 'text-gray-600'"
+          class="flex flex-col items-center hover:text-blue-600"
         >
           <i class="fas fa-users text-xl mb-1"></i>
-          <span>Network</span>
-        </div>
+          <span>Community</span>
+        </a>
         <a
           [routerLink]="['/createPost']"
           [ngClass]="
