@@ -608,8 +608,15 @@ export class GroupDetailComponent implements OnInit {
   }
 
   canModeratePost(post: GroupPost): boolean {
-    return this.group?.userMembership?.role === 'admin' || 
-           this.group?.userMembership?.role === 'moderator';
+    // Check if user is group admin/moderator
+    const isGroupModerator = this.group?.userMembership?.role === 'admin' || 
+                            this.group?.userMembership?.role === 'moderator';
+    
+    // Check if user is platform admin
+    const user = this.authService.currentUser;
+    const isPlatformAdmin = user?.role === 'admin';
+    
+    return isGroupModerator || isPlatformAdmin;
   }
 
   getGroupTypeClass(type: string): string {
@@ -631,7 +638,44 @@ export class GroupDetailComponent implements OnInit {
   }
 
   formatDate(dateString: string): string {
-    return new Date(dateString).toLocaleDateString();
+    if (!dateString) return 'Unknown';
+    
+    try {
+      const date = new Date(dateString);
+      const now = new Date();
+      const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
+      
+      // If less than 24 hours ago, show relative time
+      if (diffInHours < 24) {
+        if (diffInHours < 1) {
+          const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+          return diffInMinutes <= 1 ? 'Just now' : `${diffInMinutes} minutes ago`;
+        }
+        return `${Math.floor(diffInHours)} hours ago`;
+      }
+      
+      // If less than 7 days ago, show day and time
+      if (diffInHours < 168) { // 7 days
+        return date.toLocaleDateString('en-US', { 
+          weekday: 'short', 
+          hour: 'numeric', 
+          minute: '2-digit',
+          hour12: true 
+        });
+      }
+      
+      // Otherwise show full date and time
+      return date.toLocaleDateString('en-US', { 
+        year: 'numeric',
+        month: 'short', 
+        day: 'numeric',
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+    } catch {
+      return 'Invalid Date';
+    }
   }
 
   scrollToCreatePost() {
