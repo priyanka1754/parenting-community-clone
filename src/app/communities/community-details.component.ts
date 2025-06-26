@@ -99,8 +99,8 @@ import { Community, Group } from '../models';
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-gray-900">Groups</h2>
+            <!-- Always show Create Group button -->
             <button 
-              *ngIf="isLoggedIn"
               (click)="createGroup()"
               class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
               Create Group
@@ -438,6 +438,17 @@ export class CommunityDetailComponent implements OnInit {
   }
 
   createGroup() {
+    if (!this.isLoggedIn) {
+      // Redirect to login with return URL
+      this.router.navigate(['/login'], { 
+        queryParams: { 
+          returnUrl: `/communities/${this.community?.id}`,
+          action: 'create-group'
+        } 
+      });
+      return;
+    }
+
     if (this.community) {
       this.router.navigate(['/groups/create'], { 
         queryParams: { communityId: this.community.id } 
@@ -466,8 +477,38 @@ export class CommunityDetailComponent implements OnInit {
   }
 
   requestExpertStatus() {
-    // This would open a modal or navigate to a form for expert request
-    console.log('Request expert status');
+    if (!this.isLoggedIn) {
+      this.router.navigate(['/login'], { 
+        queryParams: { 
+          returnUrl: `/communities/${this.community?.id}`,
+          action: 'request-expert'
+        } 
+      });
+      return;
+    }
+
+    if (!this.community) return;
+
+    // Simple prompt for now - in a real app this would be a proper form
+    const expertiseAreas = prompt('Please enter your areas of expertise (comma-separated):');
+    const credentials = prompt('Please enter your credentials/qualifications:');
+
+    if (expertiseAreas && credentials) {
+      this.communityService.requestExpertStatus(
+        this.community.id, 
+        expertiseAreas.split(',').map(area => area.trim()),
+        credentials
+      ).subscribe({
+        next: (response: any) => {
+          alert('Expert request submitted successfully! It will be reviewed by administrators.');
+          this.loadCommunity(this.community!.id); // Reload to update expert status
+        },
+        error: (error: any) => {
+          console.error('Error requesting expert status:', error);
+          alert('Failed to submit expert request. Please try again.');
+        }
+      });
+    }
   }
 
   getFullImageUrl(imagePath: string): string {
