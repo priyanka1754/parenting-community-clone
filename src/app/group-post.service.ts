@@ -16,27 +16,43 @@ export class GroupPostService {
     return this.http.post<GroupPost>(`${this.apiUrl}/group/${groupId}`, postData);
   }
 
-  getPostsByGroup(
-    groupId: string,
-    params?: {
-      page?: number;
-      limit?: number;
-      postType?: string;
-      urgencyLevel?: string;
-      sortBy?: string;
-    }
-  ): Observable<GroupPost[]> {
-    let httpParams = new HttpParams();
-    if (params) {
-      Object.keys(params).forEach(key => {
-        const value = params[key as keyof typeof params];
-        if (value !== undefined && value !== null) {
-          httpParams = httpParams.set(key, value.toString());
-        }
-      });
-    }
-    return this.http.get<GroupPost[]>(`${this.apiUrl}/group/${groupId}`, { params: httpParams });
+getPostsByGroup(
+  groupId: string,
+  params?: {
+    page?: number;
+    limit?: number;
+    postType?: string;
+    urgencyLevel?: string;
+    sortBy?: string;
   }
+): Observable<{
+  posts: GroupPost[];
+  totalPages: number;
+  currentPage: number;
+  totalPosts: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}> {
+  let httpParams = new HttpParams();
+  if (params) {
+    Object.keys(params).forEach(key => {
+      const value = params[key as keyof typeof params];
+      if (value !== undefined && value !== null) {
+        httpParams = httpParams.set(key, value.toString());
+      }
+    });
+  }
+
+  return this.http.get<{
+    posts: GroupPost[];
+    totalPages: number;
+    currentPage: number;
+    totalPosts: number;
+    hasNextPage: boolean;
+    hasPrevPage: boolean;
+  }>(`${this.apiUrl}/group/${groupId}`, { params: httpParams });
+}
+
 
   getPostById(id: string): Observable<GroupPost> {
     return this.http.get<GroupPost>(`${this.apiUrl}/${id}`);
