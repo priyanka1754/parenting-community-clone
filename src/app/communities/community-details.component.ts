@@ -5,11 +5,12 @@ import { CommunityService } from '../community.service';
 import { GroupService } from '../group.service';
 import { AuthService } from '../auth.service';
 import { Community, Group } from '../models';
+import { RoleTagComponent } from '../shared/role-tag.component';
 
 @Component({
   selector: 'app-community-detail',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, RoleTagComponent],
   template: `
     <div class="min-h-screen bg-gray-50">
       <!-- Loading -->
