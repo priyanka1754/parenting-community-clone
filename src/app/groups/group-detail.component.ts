@@ -6,11 +6,13 @@ import { GroupService } from '../group.service';
 import { GroupPostService } from '../group-post.service';
 import { AuthService } from '../auth.service';
 import { Group, GroupPost, PostComment } from '../models';
+import { RoleTagComponent } from '../shared/role-tag.component';
+import { MediaUploadComponent } from '../shared/media-upload.component';
 
 @Component({
   selector: 'app-group-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, RoleTagComponent, MediaUploadComponent],
   template: `
     <div class="min-h-screen bg-gray-50">
       <!-- Loading -->
@@ -68,13 +70,32 @@ import { Group, GroupPost, PostComment } from '../models';
                   
                   <div *ngIf="isGroupMember" class="flex gap-2">
                     <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                      {{ group.userMembership?.role === 'admin' ? 'Admin' : 
+                      {{ isGroupCreator ? '[Group Admin]' : 
+                         group.userMembership?.role === 'admin' ? 'Admin' : 
                          group.userMembership?.role === 'moderator' ? 'Moderator' : 'Member' }}
                     </span>
+                    
+                    <!-- Edit Group Button (Group Admin only) -->
                     <button 
-                      *ngIf="!isGroupCreator"
-                      (click)="leaveGroup()"
+                      *ngIf="canEditGroup"
+                      (click)="editGroup()"
+                      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                      Edit Group
+                    </button>
+                    
+                    <!-- Delete Group Button (Group Admin only) -->
+                    <button 
+                      *ngIf="canDeleteGroup"
+                      (click)="deleteGroup()"
                       class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                      Delete Group
+                    </button>
+                    
+                    <!-- Leave Group Button (Members only, not group creator) -->
+                    <button 
+                      *ngIf="shouldShowLeaveButton"
+                      (click)="leaveGroup()"
+                      class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
                       Leave Group
                     </button>
                   </div>
@@ -125,12 +146,18 @@ import { Group, GroupPost, PostComment } from '../models';
             <!-- Create Post (Members Only) -->
             <div *ngIf="isGroupMember" class="bg-white rounded-lg shadow-sm p-6 mb-6">
               <h3 class="text-lg font-semibold text-gray-900 mb-4">Create a Post</h3>
-              <div class="space-y-4">
-                <textarea
+              <div class="space-y-4">                <textarea 
                   [(ngModel)]="newPostContent"
                   placeholder="What's on your mind?"
                   rows="3"
                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                
+                <!-- Enhanced Media Upload -->
+                <app-media-upload
+                  [maxFiles]="10"
+                  (filesUploaded)="onMediaUploaded($event)"
+                  (uploadProgress)="onUploadProgress($event)">
+                </app-media-upload>
                 
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-4">
@@ -208,7 +235,19 @@ import { Group, GroupPost, PostComment } from '../models';
                       [alt]="post.authorId.name"
                       class="w-10 h-10 rounded-full">
                     <div>
-                      <p class="font-medium text-gray-900">{{ post.isAnonymous ? 'Anonymous' : post.authorId.name }}</p>
+                      <div class="flex items-center space-x-2">
+                        <p class="font-medium text-gray-900">{{ post.isAnonymous ? 'Anonymous' : post.authorId.name }}</p>
+                        <!-- Role Tags -->
+                        <app-role-tag 
+                          *ngIf="!post.isAnonymous && post.authorId.role"
+                          [userRoles]?="post.authorId.role"
+                          [currentCommunityId]?="group?.communityId"
+                          [currentGroupId]="group?.id"
+                          [showGroupAdmin]="true"
+                          [showCommunityRoles]="true"
+                          [showPlatformRoles]="true">
+                        </app-role-tag>
+                      </div>
                       <p class="text-sm text-gray-500">{{ formatDate(post.createdAt) }}</p>
                     </div>
                   </div>
@@ -410,6 +449,10 @@ export class GroupDetailComponent implements OnInit {
   joiningGroup = false;
   creatingPost = false;
   
+  // Media upload properties
+  uploadedMediaUrls: any[] = [];
+  uploadProgress: { [fileName: string]: number } = {};
+  
   activeTab = 'posts';
   tabs = [
     { id: 'posts', label: 'Posts' },
@@ -425,6 +468,8 @@ export class GroupDetailComponent implements OnInit {
   // Post filters
   postTypeFilter = '';
   sortBy = 'recent';
+  totalPosts: any;
+  totalPages: any;
 
   constructor(
     private route: ActivatedRoute,
@@ -457,6 +502,44 @@ export class GroupDetailComponent implements OnInit {
     return this.group?.createdBy.id === this.currentUser?.id;
   }
 
+  get isGroupAdmin(): boolean {
+    return this.isGroupCreator || this.currentUser?.role === 'admin';
+  }
+
+  get canEditGroup(): boolean {
+    return this.isGroupAdmin;
+  }
+
+  get canDeleteGroup(): boolean {
+    return this.isGroupAdmin;
+  }
+
+  get shouldShowLeaveButton(): boolean {
+    return this.isGroupMember && !this.isGroupCreator;
+  }
+// loadGroupDetails() {
+//   this.groupService.getGroupById(this.groupId).subscribe({
+//     next: (res) => {
+//       this.group = res.group;
+//       this.loadGroupPosts();
+//     },
+//     error: (err) => {
+//       console.log(err);
+//     }
+//   });
+// }
+
+// loadGroupPosts() {
+//   this.groupService.getGroupPosts(this.groupId).subscribe({
+//     next: (res) => {
+//       this.posts = res.posts;
+//     },
+//     error: (err) => {
+//       console.log(err);
+//     }
+//   });
+// }
+
   loadGroup(id: string) {
     this.loading = true;
     this.groupService.getGroupById(id).subscribe({
@@ -472,26 +555,38 @@ export class GroupDetailComponent implements OnInit {
   }
 
   loadPosts() {
-    if (!this.group) return;
-    
-    this.postsLoading = true;
-    const params = {
-      limit: 20,
-      ...(this.postTypeFilter && { postType: this.postTypeFilter }),
-      sortBy: this.sortBy
-    };
+    console.log('loadPosts() called');
+  if (!this.group) return;
 
-    this.groupPostService.getPostsByGroup(this.group.id, params).subscribe({
-      next: (posts: any[]) => {
-        this.posts = posts.map((post: any) => ({ ...post, showComments: false, newComment: '' }));
-        this.postsLoading = false;
-      },
-      error: (error: any) => {
-        console.error('Error loading posts:', error);
-        this.postsLoading = false;
-      }
-    });
-  }
+  this.postsLoading = true;
+  const params = {
+    limit: 20,
+    ...(this.postTypeFilter && { postType: this.postTypeFilter }),
+    sortBy: this.sortBy
+  };
+
+  this.groupPostService.getPostsByGroup(this.group.id, params).subscribe({
+    next: (res: any) => {
+      const postList = res.posts ?? [];
+      console.log('Fetched posts:', postList);
+      this.posts = postList.map((post: any) => ({
+        ...post,
+        showComments: false,
+        newComment: ''
+      }));
+      this.postsLoading = false;
+
+      // Optional: store pagination
+      this.totalPosts = res.totalPosts;
+      this.totalPages = res.totalPages;
+    },
+    error: (error: any) => {
+      console.error('Error loading posts:', error);
+      this.postsLoading = false;
+    }
+  });
+}
+
 
   joinGroup() {
     if (!this.group) return;
@@ -533,7 +628,8 @@ export class GroupDetailComponent implements OnInit {
     const postData = {
       content: this.newPostContent,
       postType: this.newPostType as any,
-      urgencyLevel: this.newPostUrgency as any
+      urgencyLevel: this.newPostUrgency as any,
+      mediaUrls: this.uploadedMediaUrls // Include uploaded media
     };
 
     this.groupPostService.createPost(this.group.id, postData).subscribe({
@@ -541,6 +637,7 @@ export class GroupDetailComponent implements OnInit {
         this.newPostContent = '';
         this.newPostType = 'general';
         this.newPostUrgency = 'low';
+        this.uploadedMediaUrls = []; // Clear uploaded media
         this.loadPosts(); // Reload posts
         this.creatingPost = false;
       },
@@ -689,5 +786,46 @@ export class GroupDetailComponent implements OnInit {
     if (imagePath.startsWith('localhost:3000')) return `http://${imagePath}`;
     if (imagePath.startsWith('/uploads')) return `http://localhost:3000${imagePath}`;
     return `http://localhost:3000/${imagePath.startsWith('uploads') ? imagePath : 'uploads/' + imagePath}`;
+  }
+
+  // Edit Group (Group Admin only)
+  editGroup() {
+    if (!this.canEditGroup || !this.group) return;
+    
+    // Navigate to edit group page
+    this.router.navigate(['/groups', this.group.id, 'edit']);
+  }
+
+  // Delete Group (Group Admin only)
+  deleteGroup() {
+    if (!this.canDeleteGroup || !this.group) return;
+    
+    const confirmDelete = confirm(
+      `Are you sure you want to delete the group "${this.group.title}"? This action cannot be undone.`
+    );
+    
+    if (confirmDelete) {
+      this.groupService.deleteGroup(this.group.id).subscribe({
+        next: (response) => {
+          alert('Group deleted successfully');
+          this.router.navigate(['/communities', this.group?.communityId]);
+        },
+        error: (error) => {
+          console.error('Error deleting group:', error);
+          alert('Failed to delete group: ' + (error.error?.message || 'Unknown error'));
+        }
+      });
+    }
+  }
+
+  // Media upload event handlers
+  onMediaUploaded(uploadedFiles: any[]) {
+    this.uploadedMediaUrls = uploadedFiles;
+    console.log('Media uploaded:', uploadedFiles);
+  }
+
+  onUploadProgress(progress: { file: string; progress: number }) {
+    this.uploadProgress[progress.file] = progress.progress;
+    console.log('Upload progress:', progress);
   }
 }
