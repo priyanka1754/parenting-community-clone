@@ -108,6 +108,34 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'communities/:id/edit',
+        loadComponent: () =>
+          import('./communities/edit-community.component').then(
+            (m) => m.EditCommunityComponent,
+          ),
+      },
+      {
+        path: 'groups/create',
+        loadComponent: () =>
+          import('./groups/create-group.component').then(
+            (m) => m.CreateGroupComponent,
+          ),
+      },
+      {
+        path: 'groups/:id',
+        loadComponent: () =>
+          import('./groups/group-detail.component').then(
+            (m) => m.GroupDetailComponent,
+          ),
+      },
+      {
+        path:'expert-application-form',
+        loadComponent: () =>
+          import('./expert-applications/expert-application-form.component').then(
+            (m) => m.ExpertApplicationFormComponent,
+          ),  
+      },
+      {
         path: '',
         redirectTo: 'home',
         pathMatch: 'full',

@@ -46,6 +46,10 @@ export class GroupService {
     return this.http.put<Group>(`${this.apiUrl}/${id}`, groupData);
   }
 
+  deleteGroup(id: string): Observable<{ success: boolean; message: string }> {
+    return this.http.delete<{ success: boolean; message: string }>(`${this.apiUrl}/${id}`);
+  }
+
   // Media upload
   uploadGroupMedia(file: File): Observable<UploadResponse> {
     const formData = new FormData();
