@@ -320,13 +320,11 @@ export class MediaUploadComponent implements OnInit {
     this.addFiles(files);
   }
 
- onFileSelect(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const files = Array.from(input.files || []) as File[];
+  onFileSelect(event: any) {
+  const files = Array.from(event.target.files || []) as File[];
   this.addFiles(files);
-  input.value = ''; // Reset input
+  event.target.value = ''; // Reset input
 }
-
 
   addFiles(files: File[]) {
     if (this.uploadFiles.length + files.length > this.maxFiles) {

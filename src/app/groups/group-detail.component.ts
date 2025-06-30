@@ -8,6 +8,7 @@ import { AuthService } from '../auth.service';
 import { Group, GroupPost, PostComment } from '../models';
 import { RoleTagComponent } from '../shared/role-tag.component';
 import { MediaUploadComponent } from '../shared/media-upload.component';
+import { GroupPostsResponse } from '../group-post.service';
 
 @Component({
   selector: 'app-group-detail',
@@ -240,9 +241,8 @@ import { MediaUploadComponent } from '../shared/media-upload.component';
                         <!-- Role Tags -->
                         <app-role-tag 
                           *ngIf="!post.isAnonymous && post.authorId.role"
-                          [userRoles]?="post.authorId.role"
-                          [currentCommunityId]?="group?.communityId"
-                          [currentGroupId]="group?.id"
+                          [currentCommunityId]="group.communityId.id"
+                          [currentGroupId]="group.id"
                           [showGroupAdmin]="true"
                           [showCommunityRoles]="true"
                           [showPlatformRoles]="true">
@@ -468,8 +468,8 @@ export class GroupDetailComponent implements OnInit {
   // Post filters
   postTypeFilter = '';
   sortBy = 'recent';
-  totalPosts: any;
-  totalPages: any;
+  totalPosts: number | undefined;
+  totalPages: number | undefined;
 
   constructor(
     private route: ActivatedRoute,
@@ -480,14 +480,13 @@ export class GroupDetailComponent implements OnInit {
   ) {}
 
   ngOnInit() {
-    this.checkUserStatus();
-    this.route.params.subscribe(params => {
-      if (params['id']) {
-        this.loadGroup(params['id']);
-        this.loadPosts();
-      }
-    });
-  }
+  this.checkUserStatus();
+  this.route.params.subscribe(params => {
+    if (params['id']) {
+      this.loadGroup(params['id']);
+    }
+  });
+}
 
   checkUserStatus() {
     this.currentUser = this.authService.currentUser;
@@ -517,76 +516,80 @@ export class GroupDetailComponent implements OnInit {
   get shouldShowLeaveButton(): boolean {
     return this.isGroupMember && !this.isGroupCreator;
   }
-// loadGroupDetails() {
-//   this.groupService.getGroupById(this.groupId).subscribe({
-//     next: (res) => {
-//       this.group = res.group;
-//       this.loadGroupPosts();
-//     },
-//     error: (err) => {
-//       console.log(err);
-//     }
-//   });
-// }
 
-// loadGroupPosts() {
-//   this.groupService.getGroupPosts(this.groupId).subscribe({
-//     next: (res) => {
-//       this.posts = res.posts;
-//     },
-//     error: (err) => {
-//       console.log(err);
-//     }
-//   });
-// }
-
-  loadGroup(id: string) {
-    this.loading = true;
-    this.groupService.getGroupById(id).subscribe({
-      next: (group: Group | null) => {
-        this.group = group;
-        this.loading = false;
-      },
-      error: (error: any) => {
-        console.error('Error loading group:', error);
-        this.loading = false;
+ loadGroup(id: string) {
+  this.loading = true;
+  this.groupService.getGroupById(id).subscribe({
+    next: (group: Group | null) => {
+      this.group = group;
+      this.loading = false;
+      // Load posts after group is loaded
+      if (this.group) {
+        this.loadPosts();
       }
-    });
-  }
+    },
+    error: (error: any) => {
+      console.error('Error loading group:', error);
+      this.loading = false;
+    }
+  });
+}
 
   loadPosts() {
-    console.log('loadPosts() called');
-  if (!this.group) return;
+  console.log('loadPosts() called');
+  
+  if (!this.group) {
+    console.log('No group available, skipping posts load');
+    return;
+  }
 
   this.postsLoading = true;
   const params = {
+    page: 1,
     limit: 20,
     ...(this.postTypeFilter && { postType: this.postTypeFilter }),
     sortBy: this.sortBy
   };
 
+  console.log('Loading posts for group:', this.group.id, 'with params:', params);
+
   this.groupPostService.getPostsByGroup(this.group.id, params).subscribe({
-    next: (res: any) => {
-      const postList = res.posts ?? [];
+    next: (response: GroupPostsResponse) => {
+      console.log('Posts response:', response);
+      
+      // Handle the structured response
+      const postList = response.posts || [];
       console.log('Fetched posts:', postList);
+      
       this.posts = postList.map((post: any) => ({
         ...post,
         showComments: false,
         newComment: ''
       }));
+      
       this.postsLoading = false;
 
-      // Optional: store pagination
-      this.totalPosts = res.totalPosts;
-      this.totalPages = res.totalPages;
+      // Store pagination info
+      this.totalPosts = response.totalPosts;
+      this.totalPages = response.totalPages;
+      
+      console.log('Posts loaded successfully:', this.posts.length);
     },
     error: (error: any) => {
       console.error('Error loading posts:', error);
       this.postsLoading = false;
+      
+      // Show user-friendly error message
+      if (error.status === 404) {
+        console.log('Group not found');
+      } else if (error.status === 403) {
+        console.log('Access denied - you may need to join the group');
+      } else {
+        console.log('Failed to load posts. Please try again.');
+      }
     }
   });
 }
-
 
   joinGroup() {
     if (!this.group) return;

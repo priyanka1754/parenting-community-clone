@@ -476,43 +476,10 @@ export class CommunityDetailComponent implements OnInit {
       });
     }
   }
-
-  requestExpertStatus() {
-    if (!this.isLoggedIn) {
-      this.router.navigate(['/login'], { 
-        queryParams: { 
-          returnUrl: `/communities/${this.community?.id}`,
-          action: 'request-expert'
-        } 
-      });
-      return;
-    }
-
-    if (!this.community) return;
-
-    // Simple prompt for now - in a real app this would be a proper form
-    const expertiseAreas = prompt('Please enter your areas of expertise (comma-separated):');
-    const credentials = prompt('Please enter your credentials/qualifications:');
-
-    if (expertiseAreas && credentials) {
-      this.communityService.requestExpertStatus(
-        this.community.id, 
-        expertiseAreas.split(',').map(area => area.trim()),
-        credentials
-      ).subscribe({
-        next: (response: any) => {
-          alert('Expert request submitted successfully! It will be reviewed by administrators.');
-          this.loadCommunity(this.community!.id); // Reload to update expert status
-        },
-        error: (error: any) => {
-          console.error('Error requesting expert status:', error);
-          alert('Failed to submit expert request. Please try again.');
-        }
-      });
-    }
+requestExpertStatus(): void {
+    this.router.navigate(['/expert-application-form']);
   }
-
-  getFullImageUrl(imagePath: string): string {
+    getFullImageUrl(imagePath: string): string {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
     // If imagePath starts with 'localhost:3000', add 'http://' in front

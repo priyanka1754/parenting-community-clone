@@ -58,7 +58,7 @@ export interface ApplicationsListResponse {
   providedIn: 'root'
 })
 export class ExpertApplicationService {
-  private apiUrl = 'http://localhost:3000/api/expert-applications';
+  private apiUrl = '/api/parenting/expert-application';
 
   constructor(private http: HttpClient) {}
 

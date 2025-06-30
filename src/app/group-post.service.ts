@@ -3,6 +3,16 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { GroupPost, GroupPostData, PostComment, PostReply, UploadResponse } from './models';
 
+// Define the proper response interface
+export interface GroupPostsResponse {
+  posts: GroupPost[];
+  totalPages: number;
+  currentPage: number;
+  totalPosts: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -16,6 +26,7 @@ export class GroupPostService {
     return this.http.post<GroupPost>(`${this.apiUrl}/group/${groupId}`, postData);
   }
 
+  // Fixed return type to match backend response
   getPostsByGroup(
     groupId: string,
     params?: {
@@ -25,7 +36,7 @@ export class GroupPostService {
       urgencyLevel?: string;
       sortBy?: string;
     }
-  ): Observable<GroupPost[]> {
+  ): Observable<GroupPostsResponse> {
     let httpParams = new HttpParams();
     if (params) {
       Object.keys(params).forEach(key => {
@@ -35,7 +46,7 @@ export class GroupPostService {
         }
       });
     }
-    return this.http.get<GroupPost[]>(`${this.apiUrl}/group/${groupId}`, { params: httpParams });
+    return this.http.get<GroupPostsResponse>(`${this.apiUrl}/group/${groupId}`, { params: httpParams });
   }
 
   getPostById(id: string): Observable<GroupPost> {
@@ -211,4 +222,3 @@ export class GroupPostService {
     ];
   }
 }
-

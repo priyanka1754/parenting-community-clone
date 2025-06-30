@@ -129,6 +129,13 @@ export const routes: Routes = [
           ),
       },
       {
+        path:'expert-application-form',
+        loadComponent: () =>
+          import('./expert-applications/expert-application-form.component').then(
+            (m) => m.ExpertApplicationFormComponent,
+          ),  
+      },
+      {
         path: '',
         redirectTo: 'home',
         pathMatch: 'full',
