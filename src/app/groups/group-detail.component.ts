@@ -241,9 +241,8 @@ import { GroupPostsResponse } from '../group-post.service';
                         <!-- Role Tags -->
                         <app-role-tag 
                           *ngIf="!post.isAnonymous && post.authorId.role"
-                          [userRoles]?="post.authorId.role"
-                          [currentCommunityId]?="group?.communityId"
-                          [currentGroupId]="group?.id"
+                          [currentCommunityId]="group.communityId.id"
+                          [currentGroupId]="group.id"
                           [showGroupAdmin]="true"
                           [showCommunityRoles]="true"
                           [showPlatformRoles]="true">
@@ -469,8 +468,8 @@ export class GroupDetailComponent implements OnInit {
   // Post filters
   postTypeFilter = '';
   sortBy = 'recent';
-  totalPosts: any;
-  totalPages: any;
+  totalPosts: number | undefined;
+  totalPages: number | undefined;
 
   constructor(
     private route: ActivatedRoute,
@@ -517,30 +516,8 @@ export class GroupDetailComponent implements OnInit {
   get shouldShowLeaveButton(): boolean {
     return this.isGroupMember && !this.isGroupCreator;
   }
-// loadGroupDetails() {
-//   this.groupService.getGroupById(this.groupId).subscribe({
-//     next: (res) => {
-//       this.group = res.group;
-//       this.loadGroupPosts();
-//     },
-//     error: (err) => {
-//       console.log(err);
-//     }
-//   });
-// }
 
-// loadGroupPosts() {
-//   this.groupService.getGroupPosts(this.groupId).subscribe({
-//     next: (res) => {
-//       this.posts = res.posts;
-//     },
-//     error: (err) => {
-//       console.log(err);
-//     }
-//   });
-// }
-
-  loadGroup(id: string) {
+ loadGroup(id: string) {
   this.loading = true;
   this.groupService.getGroupById(id).subscribe({
     next: (group: Group | null) => {
@@ -557,7 +534,6 @@ export class GroupDetailComponent implements OnInit {
     }
   });
 }
-
 
   loadPosts() {
   console.log('loadPosts() called');
@@ -614,7 +590,6 @@ export class GroupDetailComponent implements OnInit {
     }
   });
 }
-
 
   joinGroup() {
     if (!this.group) return;
