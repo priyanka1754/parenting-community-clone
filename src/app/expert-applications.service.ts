@@ -63,6 +63,7 @@ export class ExpertApplicationService {
   constructor(private http: HttpClient) {}
 
   // Submit expert application
+  
   submitApplication(communityId: string, applicationData: ExpertApplicationData): Observable<ApplicationResponse> {
     return this.http.post<ApplicationResponse>(
       `${this.apiUrl}/communities/${communityId}/apply`,

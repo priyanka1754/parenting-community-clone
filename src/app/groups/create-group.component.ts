@@ -6,12 +6,14 @@ import { GroupService } from '../group.service';
 import { CommunityService } from '../community.service';
 import { AuthService } from '../auth.service';
 import { GroupData, Community } from '../models';
+import { BackHeaderComponent } from "../backNavigation/back-navigation.component";
 
 @Component({
   selector: 'app-create-group',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BackHeaderComponent],
   template: `
+  <app-back-header [title]="'Create Group'"></app-back-header>
     <div class="min-h-screen bg-gray-50 py-8">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->

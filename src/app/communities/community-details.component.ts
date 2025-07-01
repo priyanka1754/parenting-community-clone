@@ -6,13 +6,16 @@ import { GroupService } from '../group.service';
 import { AuthService } from '../auth.service';
 import { Community, Group } from '../models';
 import { RoleTagComponent } from '../shared/role-tag.component';
+import { BackHeaderComponent } from "../backNavigation/back-navigation.component";
+import { BottomNavComponent } from "../bottom-nav/bottom-nav.component";
 
 @Component({
   selector: 'app-community-detail',
   standalone: true,
-  imports: [CommonModule, RoleTagComponent],
+  imports: [CommonModule, BackHeaderComponent, BottomNavComponent],
   template: `
-    <div class="min-h-screen bg-gray-50">
+  <app-back-header [title]="community?.title || 'Community'"></app-back-header>
+    <div class="min-h-screen bg-gray-50 pb-20 pt-16">
       <!-- Loading -->
       <div *ngIf="loading" class="flex justify-center items-center h-64">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -272,6 +275,7 @@ import { RoleTagComponent } from '../shared/role-tag.component';
         </button>
       </div>
     </div>
+    <app-bottom-nav></app-bottom-nav>
   `,
   styles: [`
     .line-clamp-1 {
@@ -477,8 +481,11 @@ export class CommunityDetailComponent implements OnInit {
     }
   }
 requestExpertStatus(): void {
-    this.router.navigate(['/expert-application-form']);
-  }
+  this.router.navigate(['/expert-application-form'], {
+    queryParams: { communityId: this.community?.id }
+  });
+}
+
     getFullImageUrl(imagePath: string): string {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
