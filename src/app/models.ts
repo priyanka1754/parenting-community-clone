@@ -13,6 +13,7 @@ export interface User {
   following?: any[];
   createdAt?: string;
   updatedAt?: string;
+  roles?: UserRole[];
 }
 
 // Add to models.ts
@@ -213,7 +214,7 @@ export interface GroupRule {
 
 export interface UserMembership {
   status: 'active' | 'pending' | 'banned' | 'left';
-  role: 'member' | 'moderator' | 'admin';
+  role: 'member' | 'moderator' | 'admin' | 'expert';
   joinedAt?: string;
 }
 
@@ -231,7 +232,7 @@ export interface GroupMembership {
   groupId: Group;
   userId: User;
   status: 'active' | 'pending' | 'banned' | 'left';
-  role: 'member' | 'moderator' | 'admin';
+  role: 'member' | 'moderator' | 'admin' | 'expert';
   joinedAt: string;
   approvedAt?: string;
   approvedBy?: User;
@@ -348,7 +349,7 @@ export interface GroupPostData {
 export interface UserRole {
   id: string;
   userId: User;
-  role: 'admin' | 'expert' | 'user';
+  role: 'admin' | 'expert' | 'user' | 'moderator';
   permissions: string[];
   assignedBy?: User;
   assignedAt: string;
