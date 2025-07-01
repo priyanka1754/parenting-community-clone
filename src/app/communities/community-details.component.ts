@@ -20,6 +20,14 @@ import { BottomNavComponent } from "../bottom-nav/bottom-nav.component";
       <div *ngIf="loading" class="flex justify-center items-center h-64">
         <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
+<!-- Admin Action: Assign Expert -->
+<div *ngIf="isAdmin" class="mt-4">
+  <button 
+    (click)="navigateToExpertManagement(community!.id)"
+    class="text-sm text-white bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md transition">
+    Assign Expert
+  </button>
+</div>
 
       <!-- Community Detail -->
       <div *ngIf="!loading && community">
@@ -345,6 +353,9 @@ export class CommunityDetailComponent implements OnInit {
       }
     });
   }
+navigateToExpertManagement(communityId: string) {
+  this.router.navigate(['/expert-application-management', communityId]);
+}
 
   loadGroups(communityId: string) {
     this.groupsLoading = true;
