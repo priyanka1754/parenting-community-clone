@@ -9,16 +9,20 @@ import { Group, GroupPost, PostComment } from '../models';
 import { RoleTagComponent } from '../shared/role-tag.component';
 import { MediaUploadComponent } from '../shared/media-upload.component';
 import { GroupPostsResponse } from '../group-post.service';
+import { BackHeaderComponent } from "../backNavigation/back-navigation.component";
 
 @Component({
   selector: 'app-group-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RoleTagComponent, MediaUploadComponent],
+  imports: [CommonModule, FormsModule, RoleTagComponent, MediaUploadComponent, BackHeaderComponent],
   template: `
+  <app-back-header [title]="group?.title || 'Group'"></app-back-header>
     <div class="min-h-screen bg-gray-50">
       <!-- Loading -->
       <div *ngIf="loading" class="flex justify-center items-center h-64">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div
+          class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+        ></div>
       </div>
 
       <!-- Group Detail -->
@@ -29,16 +33,22 @@ import { GroupPostsResponse } from '../group-post.service';
             <div class="flex flex-col lg:flex-row gap-6">
               <!-- Group Image -->
               <div class="flex-shrink-0">
-                <div class="w-24 h-24 lg:w-32 lg:h-32 rounded-lg overflow-hidden bg-gray-200">
-                  <img 
-                    *ngIf="group.image" 
-                    [src]="getFullImageUrl(group.image)" 
+                <div
+                  class="w-24 h-24 lg:w-32 lg:h-32 rounded-lg overflow-hidden bg-gray-200"
+                >
+                  <img
+                    *ngIf="group.image"
+                    [src]="getFullImageUrl(group.image)"
                     [alt]="group.title"
-                    class="w-full h-full object-cover">
-                  <div 
+                    class="w-full h-full object-cover"
+                  />
+                  <div
                     *ngIf="!group.image"
-                    class="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-400 to-blue-500">
-                    <span class="text-white text-2xl lg:text-3xl font-bold">{{ group.title.charAt(0) }}</span>
+                    class="w-full h-full flex items-center justify-center bg-gradient-to-br from-green-400 to-blue-500"
+                  >
+                    <span class="text-white text-2xl lg:text-3xl font-bold">{{
+                      group.title.charAt(0)
+                    }}</span>
                   </div>
                 </div>
               </div>
@@ -47,56 +57,91 @@ import { GroupPostsResponse } from '../group-post.service';
               <div class="flex-1">
                 <div class="flex items-start justify-between mb-4">
                   <div>
-                    <h1 class="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">{{ group.title }}</h1>
-                    <div class="flex items-center gap-3 text-sm text-gray-600 mb-2">
-                      <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{{ group.category }}</span>
-                      <span 
+                    <h1
+                      class="text-2xl lg:text-3xl font-bold text-gray-900 mb-2"
+                    >
+                      {{ group.title }}
+                    </h1>
+                    <div
+                      class="flex items-center gap-3 text-sm text-gray-600 mb-2"
+                    >
+                      <span
+                        class="bg-blue-100 text-blue-800 px-2 py-1 rounded-full"
+                        >{{ group.category }}</span
+                      >
+                      <span
                         [class]="getGroupTypeClass(group.type)"
-                        class="px-2 py-1 rounded-full text-xs">
+                        class="px-2 py-1 rounded-full text-xs"
+                      >
                         {{ group.type }}
                       </span>
-                      <span class="text-gray-500">in {{ group.communityId.title }}</span>
+                      <span class="text-gray-500"
+                        >in {{ group.communityId.title }}</span
+                      >
                     </div>
                   </div>
-                  
+
                   <!-- Join/Leave Button -->
-                  <div *ngIf="isLoggedIn && !isGroupMember" class="flex gap-2">
-                    <button 
+                  <div
+                    *ngIf="isLoggedIn && !isGroupMember && !isPlatformAdmin"
+                    class="flex gap-2"
+                  >
+                    <button
                       (click)="joinGroup()"
                       [disabled]="joiningGroup"
-                      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
-                      {{ joiningGroup ? 'Joining...' : (group.type === 'Private' ? 'Request to Join' : 'Join Group') }}
+                      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {{
+                        joiningGroup
+                          ? 'Joining...'
+                          : group.type === 'Private'
+                            ? 'Request to Join'
+                            : 'Join Group'
+                      }}
                     </button>
                   </div>
-                  
+
                   <div *ngIf="isGroupMember" class="flex gap-2">
-                    <span class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm">
-                      {{ isGroupCreator ? '[Group Admin]' : 
-                         group.userMembership?.role === 'admin' ? 'Admin' : 
-                         group.userMembership?.role === 'moderator' ? 'Moderator' : 'Member' }}
+                    <span
+                      class="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm"
+                    >
+                      {{
+                        currentUser?.role === 'admin'
+                          ? 'Platform Admin'
+                          : isGroupCreator
+                            ? 'Group Admin'
+                            : group.userMembership?.role === 'admin'
+                              ? 'Group Admin'
+                              : group.userMembership?.role === 'moderator'
+                                ? 'Moderator'
+                                : 'Member'
+                      }}
                     </span>
-                    
+
                     <!-- Edit Group Button (Group Admin only) -->
-                    <button 
+                    <button
                       *ngIf="canEditGroup"
                       (click)="editGroup()"
-                      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                    >
                       Edit Group
                     </button>
-                    
+
                     <!-- Delete Group Button (Group Admin only) -->
-                    <button 
+                    <button
                       *ngIf="canDeleteGroup"
                       (click)="deleteGroup()"
-                      class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors">
+                      class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                    >
                       Delete Group
                     </button>
-                    
+
                     <!-- Leave Group Button (Members only, not group creator) -->
-                    <button 
+                    <button
                       *ngIf="shouldShowLeaveButton"
                       (click)="leaveGroup()"
-                      class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors">
+                      class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors"
+                    >
                       Leave Group
                     </button>
                   </div>
@@ -105,15 +150,21 @@ import { GroupPostsResponse } from '../group-post.service';
                 <!-- Stats -->
                 <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                   <div class="text-center p-3 bg-gray-50 rounded-lg">
-                    <div class="text-xl font-bold text-blue-600">{{ group.memberCount }}</div>
+                    <div class="text-xl font-bold text-blue-600">
+                      {{ group.memberCount }}
+                    </div>
                     <div class="text-sm text-gray-600">Members</div>
                   </div>
                   <div class="text-center p-3 bg-gray-50 rounded-lg">
-                    <div class="text-xl font-bold text-green-600">{{ group.postCount }}</div>
+                    <div class="text-xl font-bold text-green-600">
+                      {{ group.postCount }}
+                    </div>
                     <div class="text-sm text-gray-600">Posts</div>
                   </div>
                   <div class="text-center p-3 bg-gray-50 rounded-lg">
-                    <div class="text-xl font-bold text-purple-600">{{ group.rules.length }}</div>
+                    <div class="text-xl font-bold text-purple-600">
+                      {{ group.rules.length }}
+                    </div>
                     <div class="text-sm text-gray-600">Rules</div>
                   </div>
                 </div>
@@ -129,11 +180,16 @@ import { GroupPostsResponse } from '../group-post.service';
         <div class="bg-white border-b">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <nav class="flex space-x-8">
-              <button 
+              <button
                 *ngFor="let tab of tabs"
                 (click)="activeTab = tab.id"
-                [class]="activeTab === tab.id ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
-                class="py-4 px-1 border-b-2 font-medium text-sm">
+                [class]="
+                  activeTab === tab.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                "
+                class="py-4 px-1 border-b-2 font-medium text-sm"
+              >
                 {{ tab.label }}
               </button>
             </nav>
@@ -145,46 +201,57 @@ import { GroupPostsResponse } from '../group-post.service';
           <!-- Posts Tab -->
           <div *ngIf="activeTab === 'posts'">
             <!-- Create Post (Members Only) -->
-            <div *ngIf="isGroupMember" class="bg-white rounded-lg shadow-sm p-6 mb-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Create a Post</h3>
-              <div class="space-y-4">                <textarea 
+            <div
+              *ngIf="isGroupMember"
+              class="bg-white rounded-lg shadow-sm p-6 mb-6"
+            >
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                Create a Post
+              </h3>
+              <div class="space-y-4">
+                <textarea
                   [(ngModel)]="newPostContent"
                   placeholder="What's on your mind?"
                   rows="3"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
-                
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                ></textarea>
+
                 <!-- Enhanced Media Upload -->
                 <app-media-upload
                   [maxFiles]="10"
                   (filesUploaded)="onMediaUploaded($event)"
-                  (uploadProgress)="onUploadProgress($event)">
+                  (uploadProgress)="onUploadProgress($event)"
+                >
                 </app-media-upload>
-                
+
                 <div class="flex items-center justify-between">
                   <div class="flex items-center space-x-4">
-                    <select 
+                    <select
                       [(ngModel)]="newPostType"
-                      class="px-3 py-1 border border-gray-300 rounded-md text-sm">
+                      class="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                    >
                       <option value="general">General</option>
                       <option value="question">Question</option>
                       <option value="help">Help</option>
                       <option value="event">Event</option>
                     </select>
-                    
-                    <select 
+
+                    <select
                       [(ngModel)]="newPostUrgency"
-                      class="px-3 py-1 border border-gray-300 rounded-md text-sm">
+                      class="px-3 py-1 border border-gray-300 rounded-md text-sm"
+                    >
                       <option value="low">Low Priority</option>
                       <option value="medium">Medium Priority</option>
                       <option value="high">High Priority</option>
                       <option value="urgent">Urgent</option>
                     </select>
                   </div>
-                  
-                  <button 
+
+                  <button
                     (click)="createPost()"
                     [disabled]="!newPostContent.trim() || creatingPost"
-                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50">
+                    class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                  >
                     {{ creatingPost ? 'Posting...' : 'Post' }}
                   </button>
                 </div>
@@ -194,21 +261,23 @@ import { GroupPostsResponse } from '../group-post.service';
             <!-- Post Filters -->
             <div class="bg-white rounded-lg shadow-sm p-4 mb-6">
               <div class="flex flex-wrap gap-4">
-                <select 
+                <select
                   [(ngModel)]="postTypeFilter"
                   (change)="loadPosts()"
-                  class="px-3 py-2 border border-gray-300 rounded-md">
+                  class="px-3 py-2 border border-gray-300 rounded-md"
+                >
                   <option value="">All Types</option>
                   <option value="general">General</option>
                   <option value="question">Questions</option>
                   <option value="help">Help</option>
                   <option value="event">Events</option>
                 </select>
-                
-                <select 
+
+                <select
                   [(ngModel)]="sortBy"
                   (change)="loadPosts()"
-                  class="px-3 py-2 border border-gray-300 rounded-md">
+                  class="px-3 py-2 border border-gray-300 rounded-md"
+                >
                   <option value="recent">Most Recent</option>
                   <option value="popular">Most Popular</option>
                   <option value="urgent">Most Urgent</option>
@@ -218,53 +287,64 @@ import { GroupPostsResponse } from '../group-post.service';
 
             <!-- Posts Loading -->
             <div *ngIf="postsLoading" class="text-center py-8">
-              <div class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <div
+                class="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"
+              ></div>
               <p class="mt-2 text-gray-600">Loading posts...</p>
             </div>
 
             <!-- Posts List -->
             <div *ngIf="!postsLoading" class="space-y-6">
-              <div 
-                *ngFor="let post of posts" 
-                class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow">
-                
+              <div
+                *ngFor="let post of posts"
+                class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow"
+              >
                 <!-- Post Header -->
                 <div class="flex items-start justify-between mb-4">
                   <div class="flex items-center space-x-3">
-                    <img 
+                    <img
                       [src]="post.authorId.avatar || '/assets/user-img.png'"
                       [alt]="post.authorId.name"
-                      class="w-10 h-10 rounded-full">
+                      class="w-10 h-10 rounded-full"
+                    />
                     <div>
                       <div class="flex items-center space-x-2">
-                        <p class="font-medium text-gray-900">{{ post.isAnonymous ? 'Anonymous' : post.authorId.name }}</p>
+                        <p class="font-medium text-gray-900">
+                          {{
+                            post.isAnonymous ? 'Anonymous' : post.authorId.name
+                          }}
+                        </p>
                         <!-- Role Tags -->
-                        <app-role-tag 
-                          *ngIf="!post.isAnonymous && post.authorId.role"
+                        <app-role-tag
+                          *ngIf="post.authorId?.roles"
+                           [userRoles]="post.authorId.roles ?? []"
                           [currentCommunityId]="group.communityId.id"
                           [currentGroupId]="group.id"
-                          [showGroupAdmin]="true"
-                          [showCommunityRoles]="true"
-                          [showPlatformRoles]="true">
+                        >
                         </app-role-tag>
                       </div>
-                      <p class="text-sm text-gray-500">{{ formatDate(post.createdAt) }}</p>
+                      <p class="text-sm text-gray-500">
+                        {{ formatDate(post.createdAt) }}
+                      </p>
                     </div>
                   </div>
-                  
+
                   <div class="flex items-center space-x-2">
-                    <span 
+                    <span
                       *ngIf="post.isPinned"
-                      class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs">
+                      class="bg-yellow-100 text-yellow-800 px-2 py-1 rounded-full text-xs"
+                    >
                       Pinned
                     </span>
-                    <span 
+                    <span
                       [class]="getUrgencyClass(post.urgencyLevel)"
-                      class="px-2 py-1 rounded-full text-xs">
+                      class="px-2 py-1 rounded-full text-xs"
+                    >
                       {{ post.urgencyLevel }}
                     </span>
-                    <span 
-                      class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs">
+                    <span
+                      class="bg-gray-100 text-gray-800 px-2 py-1 rounded-full text-xs"
+                    >
                       {{ post.postType }}
                     </span>
                   </div>
@@ -272,94 +352,119 @@ import { GroupPostsResponse } from '../group-post.service';
 
                 <!-- Post Content -->
                 <div class="mb-4">
-                  <p class="text-gray-800 leading-relaxed">{{ post.content }}</p>
-                  
+                  <p class="text-gray-800 leading-relaxed">
+                    {{ post.content }}
+                  </p>
+
                   <!-- Media -->
-                  <div *ngIf="post.mediaUrls.length > 0" class="mt-4 grid grid-cols-2 gap-2">
+                  <div
+                    *ngIf="post.mediaUrls.length > 0"
+                    class="mt-4 grid grid-cols-2 gap-2"
+                  >
                     <div *ngFor="let media of post.mediaUrls" class="relative">
-                      <img 
+                      <img
                         *ngIf="media.mediaType === 'image'"
-                        [src]="getFullImageUrl(media.url)" 
-                        class="w-full h-32 object-cover rounded-lg">
-                      <video 
+                        [src]="getFullImageUrl(media.url)"
+                        class="w-full h-32 object-cover rounded-lg"
+                      />
+                      <video
                         *ngIf="media.mediaType === 'video'"
-                        [src]="getFullImageUrl(media.url)" 
+                        [src]="getFullImageUrl(media.url)"
                         controls
-                        class="w-full h-32 object-cover rounded-lg">
-                      </video>
+                        class="w-full h-32 object-cover rounded-lg"
+                      ></video>
                     </div>
                   </div>
 
                   <!-- Tags -->
-                  <div *ngIf="post.tags.length > 0" class="mt-3 flex flex-wrap gap-2">
-                    <span 
+                  <div
+                    *ngIf="post.tags.length > 0"
+                    class="mt-3 flex flex-wrap gap-2"
+                  >
+                    <span
                       *ngFor="let tag of post.tags"
-                      class="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs">
+                      class="bg-blue-50 text-blue-700 px-2 py-1 rounded-full text-xs"
+                    >
                       #{{ tag }}
                     </span>
                   </div>
                 </div>
 
                 <!-- Post Actions -->
-                <div class="flex items-center justify-between pt-4 border-t border-gray-100">
+                <div
+                  class="flex items-center justify-between pt-4 border-t border-gray-100"
+                >
                   <div class="flex items-center space-x-6">
-                    <button 
+                    <button
                       (click)="toggleLike(post)"
                       [class]="post.isLiked ? 'text-red-600' : 'text-gray-500'"
-                      class="flex items-center space-x-1 hover:text-red-600 transition-colors">
+                      class="flex items-center space-x-1 hover:text-red-600 transition-colors"
+                    >
                       <span>{{ post.isLiked ? '❤️' : '🤍' }}</span>
                       <span class="text-sm">{{ post.likeCount }}</span>
                     </button>
-                    
-                    <button 
+
+                    <button
                       (click)="toggleComments(post)"
-                      class="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors">
+                      class="flex items-center space-x-1 text-gray-500 hover:text-blue-600 transition-colors"
+                    >
                       <span>💬</span>
                       <span class="text-sm">{{ post.commentCount }}</span>
                     </button>
-                    
-                    <button 
+
+                    <button
                       (click)="toggleBookmark(post)"
-                      [class]="post.isBookmarked ? 'text-yellow-600' : 'text-gray-500'"
-                      class="flex items-center space-x-1 hover:text-yellow-600 transition-colors">
+                      [class]="
+                        post.isBookmarked ? 'text-yellow-600' : 'text-gray-500'
+                      "
+                      class="flex items-center space-x-1 hover:text-yellow-600 transition-colors"
+                    >
                       <span>{{ post.isBookmarked ? '🔖' : '📑' }}</span>
                     </button>
                   </div>
-                  
+
                   <div class="flex items-center space-x-2">
-                    <button 
+                    <button
                       *ngIf="canModeratePost(post)"
                       (click)="togglePin(post)"
-                      class="text-gray-500 hover:text-yellow-600 transition-colors text-sm">
+                      class="text-gray-500 hover:text-yellow-600 transition-colors text-sm"
+                    >
                       {{ post.isPinned ? 'Unpin' : 'Pin' }}
                     </button>
-                    
-                    <button 
-                      class="text-gray-500 hover:text-red-600 transition-colors text-sm">
+
+                    <button
+                      class="text-gray-500 hover:text-red-600 transition-colors text-sm"
+                    >
                       Report
                     </button>
                   </div>
                 </div>
 
                 <!-- Comments Section -->
-                <div *ngIf="post.showComments" class="mt-6 pt-4 border-t border-gray-100">
+                <div
+                  *ngIf="post.showComments"
+                  class="mt-6 pt-4 border-t border-gray-100"
+                >
                   <!-- Add Comment -->
                   <div *ngIf="isGroupMember" class="mb-4">
                     <div class="flex space-x-3">
-                      <img 
+                      <img
                         [src]="currentUser?.avatar || '/assets/user-img.png'"
                         [alt]="currentUser?.name"
-                        class="w-8 h-8 rounded-full">
+                        class="w-8 h-8 rounded-full"
+                      />
                       <div class="flex-1">
                         <textarea
                           [(ngModel)]="post.newComment"
                           placeholder="Write a comment..."
                           rows="2"
-                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"></textarea>
-                        <button 
+                          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        ></textarea>
+                        <button
                           (click)="addComment(post)"
                           [disabled]="!post.newComment?.trim()"
-                          class="mt-2 bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 transition-colors disabled:opacity-50">
+                          class="mt-2 bg-blue-600 text-white px-3 py-1 rounded-md text-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+                        >
                           Comment
                         </button>
                       </div>
@@ -368,17 +473,27 @@ import { GroupPostsResponse } from '../group-post.service';
 
                   <!-- Comments List -->
                   <div class="space-y-4">
-                    <div *ngFor="let comment of post.comments" class="flex space-x-3">
-                      <img 
+                    <div
+                      *ngFor="let comment of post.comments"
+                      class="flex space-x-3"
+                    >
+                      <img
                         [src]="comment.userId.avatar || '/assets/user-img.png'"
                         [alt]="comment.userId.name"
-                        class="w-8 h-8 rounded-full">
+                        class="w-8 h-8 rounded-full"
+                      />
                       <div class="flex-1">
                         <div class="bg-gray-50 rounded-lg p-3">
-                          <p class="font-medium text-sm text-gray-900">{{ comment.userId.name }}</p>
-                          <p class="text-sm text-gray-800 mt-1">{{ comment.content }}</p>
+                          <p class="font-medium text-sm text-gray-900">
+                            {{ comment.userId.name }}
+                          </p>
+                          <p class="text-sm text-gray-800 mt-1">
+                            {{ comment.content }}
+                          </p>
                         </div>
-                        <div class="flex items-center space-x-4 mt-2 text-xs text-gray-500">
+                        <div
+                          class="flex items-center space-x-4 mt-2 text-xs text-gray-500"
+                        >
                           <span>{{ formatDate(comment.createdAt) }}</span>
                           <button class="hover:text-blue-600">Like</button>
                           <button class="hover:text-blue-600">Reply</button>
@@ -391,14 +506,22 @@ import { GroupPostsResponse } from '../group-post.service';
             </div>
 
             <!-- Empty Posts State -->
-            <div *ngIf="!postsLoading && posts.length === 0" class="text-center py-12">
+            <div
+              *ngIf="!postsLoading && posts.length === 0"
+              class="text-center py-12"
+            >
               <div class="text-gray-400 text-6xl mb-4">📝</div>
-              <h3 class="text-lg font-medium text-gray-900 mb-2">No posts yet</h3>
-              <p class="text-gray-600 mb-4">Be the first to start a conversation!</p>
-              <button 
+              <h3 class="text-lg font-medium text-gray-900 mb-2">
+                No posts yet
+              </h3>
+              <p class="text-gray-600 mb-4">
+                Be the first to start a conversation!
+              </p>
+              <button
                 *ngIf="isGroupMember"
                 (click)="scrollToCreatePost()"
-                class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
                 Create First Post
               </button>
             </div>
@@ -407,7 +530,9 @@ import { GroupPostsResponse } from '../group-post.service';
           <!-- Members Tab -->
           <div *ngIf="activeTab === 'members'">
             <div class="bg-white rounded-lg shadow-sm p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Group Members</h3>
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                Group Members
+              </h3>
               <!-- Members list would go here -->
               <p class="text-gray-600">Members list coming soon...</p>
             </div>
@@ -416,28 +541,39 @@ import { GroupPostsResponse } from '../group-post.service';
           <!-- Rules Tab -->
           <div *ngIf="activeTab === 'rules'">
             <div class="bg-white rounded-lg shadow-sm p-6">
-              <h3 class="text-lg font-semibold text-gray-900 mb-4">Group Rules</h3>
+              <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                Group Rules
+              </h3>
               <div *ngIf="group.rules.length > 0" class="space-y-4">
-                <div *ngFor="let rule of group.rules; let i = index" class="border-l-4 border-blue-500 pl-4">
-                  <h4 class="font-medium text-gray-900">{{ i + 1 }}. {{ rule.title }}</h4>
+                <div
+                  *ngFor="let rule of group.rules; let i = index"
+                  class="border-l-4 border-blue-500 pl-4"
+                >
+                  <h4 class="font-medium text-gray-900">
+                    {{ i + 1 }}. {{ rule.title }}
+                  </h4>
                   <p class="text-gray-600 mt-1">{{ rule.description }}</p>
                 </div>
               </div>
-              <p *ngIf="group.rules.length === 0" class="text-gray-600">No rules have been set for this group.</p>
+              <p *ngIf="group.rules.length === 0" class="text-gray-600">
+                No rules have been set for this group.
+              </p>
             </div>
           </div>
         </div>
       </div>
     </div>
   `,
-  styles: [`
-    .line-clamp-2 {
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-  `]
+  styles: [
+    `
+      .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+    `,
+  ],
 })
 export class GroupDetailComponent implements OnInit {
   group: Group | null = null;
@@ -448,16 +584,16 @@ export class GroupDetailComponent implements OnInit {
   currentUser: any = null;
   joiningGroup = false;
   creatingPost = false;
-  
+
   // Media upload properties
   uploadedMediaUrls: any[] = [];
   uploadProgress: { [fileName: string]: number } = {};
-  
+
   activeTab = 'posts';
   tabs = [
     { id: 'posts', label: 'Posts' },
     { id: 'members', label: 'Members' },
-    { id: 'rules', label: 'Rules' }
+    { id: 'rules', label: 'Rules' },
   ];
 
   // Post creation
@@ -476,17 +612,17 @@ export class GroupDetailComponent implements OnInit {
     private router: Router,
     private groupService: GroupService,
     private groupPostService: GroupPostService,
-    private authService: AuthService
+    private authService: AuthService,
   ) {}
 
   ngOnInit() {
-  this.checkUserStatus();
-  this.route.params.subscribe(params => {
-    if (params['id']) {
-      this.loadGroup(params['id']);
-    }
-  });
-}
+    this.checkUserStatus();
+    this.route.params.subscribe((params) => {
+      if (params['id']) {
+        this.loadGroup(params['id']);
+      }
+    });
+  }
 
   checkUserStatus() {
     this.currentUser = this.authService.currentUser;
@@ -506,97 +642,130 @@ export class GroupDetailComponent implements OnInit {
   }
 
   get canEditGroup(): boolean {
-    return this.isGroupAdmin;
+    return this.hasGroupManagementPermission;
   }
 
   get canDeleteGroup(): boolean {
-    return this.isGroupAdmin;
+    return this.hasGroupManagementPermission;
+  }
+  get hasGroupManagementPermission(): boolean {
+    const role = this.group?.userMembership?.role;
+    const isPlatformAdmin = this.currentUser?.role === 'admin';
+    return (
+      isPlatformAdmin ||
+      this.isGroupCreator ||
+      role === 'admin' ||
+      role === 'moderator'
+    );
   }
 
   get shouldShowLeaveButton(): boolean {
-    return this.isGroupMember && !this.isGroupCreator;
+    const role = this.group?.userMembership?.role;
+    const isPlatformAdmin = this.currentUser?.role === 'admin';
+
+    return (
+      this.isGroupMember &&
+      !this.isGroupCreator &&
+      role !== 'admin' &&
+      role !== 'moderator' &&
+      !isPlatformAdmin
+    );
   }
 
- loadGroup(id: string) {
-  this.loading = true;
-  this.groupService.getGroupById(id).subscribe({
-    next: (group: Group | null) => {
-      this.group = group;
-      this.loading = false;
-      // Load posts after group is loaded
-      if (this.group) {
-        this.loadPosts();
-      }
-    },
-    error: (error: any) => {
-      console.error('Error loading group:', error);
-      this.loading = false;
-    }
-  });
-}
+  get isPlatformAdmin(): boolean {
+    return this.currentUser?.role === 'admin';
+  }
+
+  loadGroup(id: string) {
+    this.loading = true;
+    this.groupService.getGroupById(id).subscribe({
+      next: (group: Group | null) => {
+        this.group = group;
+        console.log('Loaded group:', group);
+        console.log('UserMembership:', group?.userMembership);
+        console.log('CurrentUser:', this.currentUser);
+
+        this.loading = false;
+        // Load posts after group is loaded
+        if (this.group) {
+          this.loadPosts();
+        }
+      },
+
+      error: (error: any) => {
+        console.error('Error loading group:', error);
+        this.loading = false;
+      },
+    });
+  }
 
   loadPosts() {
-  console.log('loadPosts() called');
-  
-  if (!this.group) {
-    console.log('No group available, skipping posts load');
-    return;
-  }
+    console.log('loadPosts() called');
 
-  this.postsLoading = true;
-  const params = {
-    page: 1,
-    limit: 20,
-    ...(this.postTypeFilter && { postType: this.postTypeFilter }),
-    sortBy: this.sortBy
-  };
-
-  console.log('Loading posts for group:', this.group.id, 'with params:', params);
-
-  this.groupPostService.getPostsByGroup(this.group.id, params).subscribe({
-    next: (response: GroupPostsResponse) => {
-      console.log('Posts response:', response);
-      
-      // Handle the structured response
-      const postList = response.posts || [];
-      console.log('Fetched posts:', postList);
-      
-      this.posts = postList.map((post: any) => ({
-        ...post,
-        showComments: false,
-        newComment: ''
-      }));
-      
-      this.postsLoading = false;
-
-      // Store pagination info
-      this.totalPosts = response.totalPosts;
-      this.totalPages = response.totalPages;
-      
-      console.log('Posts loaded successfully:', this.posts.length);
-    },
-    error: (error: any) => {
-      console.error('Error loading posts:', error);
-      this.postsLoading = false;
-      
-      // Show user-friendly error message
-      if (error.status === 404) {
-        console.log('Group not found');
-      } else if (error.status === 403) {
-        console.log('Access denied - you may need to join the group');
-      } else {
-        console.log('Failed to load posts. Please try again.');
-      }
+    if (!this.group) {
+      console.log('No group available, skipping posts load');
+      return;
     }
-  });
-}
+
+    this.postsLoading = true;
+    const params = {
+      page: 1,
+      limit: 20,
+      ...(this.postTypeFilter && { postType: this.postTypeFilter }),
+      sortBy: this.sortBy,
+    };
+
+    console.log(
+      'Loading posts for group:',
+      this.group.id,
+      'with params:',
+      params,
+    );
+
+    this.groupPostService.getPostsByGroup(this.group.id, params).subscribe({
+      next: (response: GroupPostsResponse) => {
+        console.log('Posts response:', response);
+
+        // Handle the structured response
+        const postList = response.posts || [];
+        console.log('Fetched posts:', postList);
+
+        this.posts = postList.map((post: any) => ({
+          ...post,
+          showComments: false,
+          newComment: '',
+        }));
+
+        this.postsLoading = false;
+
+        // Store pagination info
+        this.totalPosts = response.totalPosts;
+        this.totalPages = response.totalPages;
+
+        console.log('Posts loaded successfully:', this.posts.length);
+      },
+      error: (error: any) => {
+        console.error('Error loading posts:', error);
+        this.postsLoading = false;
+
+        // Show user-friendly error message
+        if (error.status === 404) {
+          console.log('Group not found');
+        } else if (error.status === 403) {
+          console.log('Access denied - you may need to join the group');
+        } else {
+          console.log('Failed to load posts. Please try again.');
+        }
+      },
+    });
+  }
 
   joinGroup() {
     if (!this.group) return;
-    
+
     this.joiningGroup = true;
     this.groupService.joinGroup(this.group.id).subscribe({
-      next: (response: { message: any; }) => {
+      next: (response: { message: any }) => {
         alert(response.message);
         this.loadGroup(this.group!.id); // Reload to get updated membership status
         this.joiningGroup = false;
@@ -605,34 +774,35 @@ export class GroupDetailComponent implements OnInit {
         console.error('Error joining group:', error);
         alert('Failed to join group');
         this.joiningGroup = false;
-      }
+      },
     });
   }
 
   leaveGroup() {
-    if (!this.group || !confirm('Are you sure you want to leave this group?')) return;
-    
+    if (!this.group || !confirm('Are you sure you want to leave this group?'))
+      return;
+
     this.groupService.leaveGroup(this.group.id).subscribe({
-      next: (response: { message: any; }) => {
+      next: (response: { message: any }) => {
         alert(response.message);
         this.loadGroup(this.group!.id); // Reload to get updated membership status
       },
       error: (error: any) => {
         console.error('Error leaving group:', error);
         alert('Failed to leave group');
-      }
+      },
     });
   }
 
   createPost() {
     if (!this.group || !this.newPostContent.trim()) return;
-    
+
     this.creatingPost = true;
     const postData = {
       content: this.newPostContent,
       postType: this.newPostType as any,
       urgencyLevel: this.newPostUrgency as any,
-      mediaUrls: this.uploadedMediaUrls // Include uploaded media
+      mediaUrls: this.uploadedMediaUrls, // Include uploaded media
     };
 
     this.groupPostService.createPost(this.group.id, postData).subscribe({
@@ -648,43 +818,49 @@ export class GroupDetailComponent implements OnInit {
         console.error('Error creating post:', error);
         alert('Failed to create post');
         this.creatingPost = false;
-      }
+      },
     });
   }
 
   toggleLike(post: GroupPost) {
     this.groupPostService.toggleLike(post.id).subscribe({
-      next: (response: { liked: boolean | undefined; likeCount: number | undefined; }) => {
+      next: (response: {
+        liked: boolean | undefined;
+        likeCount: number | undefined;
+      }) => {
         post.isLiked = response.liked;
         post.likeCount = response.likeCount;
       },
       error: (error: any) => {
         console.error('Error toggling like:', error);
-      }
+      },
     });
   }
 
   toggleBookmark(post: GroupPost) {
     this.groupPostService.toggleBookmark(post.id).subscribe({
-      next: (response: { bookmarked: boolean | undefined; bookmarkCount: number | undefined; }) => {
+      next: (response: {
+        bookmarked: boolean | undefined;
+        bookmarkCount: number | undefined;
+      }) => {
         post.isBookmarked = response.bookmarked;
         post.bookmarkCount = response.bookmarkCount;
       },
       error: (error: any) => {
         console.error('Error toggling bookmark:', error);
-      }
+      },
     });
   }
 
   togglePin(post: GroupPost) {
     this.groupPostService.togglePin(post.id).subscribe({
-      next: (response: { isPinned: boolean; }) => {
+      next: (response: { isPinned: boolean }) => {
         post.isPinned = response.isPinned;
         this.loadPosts(); // Reload to update order
       },
       error: (error: any) => {
         console.error('Error toggling pin:', error);
-      }
+      },
     });
   }
 
@@ -694,7 +870,7 @@ export class GroupDetailComponent implements OnInit {
 
   addComment(post: GroupPost & { newComment?: string }) {
     if (!post.newComment?.trim()) return;
-    
+
     this.groupPostService.addComment(post.id, post.newComment).subscribe({
       next: (comment: PostComment) => {
         post.comments.push(comment);
@@ -703,75 +879,89 @@ export class GroupDetailComponent implements OnInit {
       },
       error: (error: any) => {
         console.error('Error adding comment:', error);
-      }
+      },
     });
   }
 
   canModeratePost(post: GroupPost): boolean {
     // Check if user is group admin/moderator
-    const isGroupModerator = this.group?.userMembership?.role === 'admin' || 
-                            this.group?.userMembership?.role === 'moderator';
-    
+    const isGroupModerator =
+      this.group?.userMembership?.role === 'admin' ||
+      this.group?.userMembership?.role === 'moderator';
+
     // Check if user is platform admin
     const user = this.authService.currentUser;
     const isPlatformAdmin = user?.role === 'admin';
-    
+
     return isGroupModerator || isPlatformAdmin;
   }
 
   getGroupTypeClass(type: string): string {
     switch (type) {
-      case 'Public': return 'bg-green-100 text-green-800';
-      case 'Private': return 'bg-yellow-100 text-yellow-800';
-      case 'Secret': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'Public':
+        return 'bg-green-100 text-green-800';
+      case 'Private':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'Secret':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   }
 
   getUrgencyClass(urgency: string): string {
     switch (urgency) {
-      case 'urgent': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'urgent':
+        return 'bg-red-100 text-red-800';
+      case 'high':
+        return 'bg-orange-100 text-orange-800';
+      case 'medium':
+        return 'bg-yellow-100 text-yellow-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   }
 
   formatDate(dateString: string): string {
     if (!dateString) return 'Unknown';
-    
+
     try {
       const date = new Date(dateString);
       const now = new Date();
       const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-      
+
       // If less than 24 hours ago, show relative time
       if (diffInHours < 24) {
         if (diffInHours < 1) {
-          const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-          return diffInMinutes <= 1 ? 'Just now' : `${diffInMinutes} minutes ago`;
+          const diffInMinutes = Math.floor(
+            (now.getTime() - date.getTime()) / (1000 * 60),
+          );
+          return diffInMinutes <= 1
+            ? 'Just now'
+            : `${diffInMinutes} minutes ago`;
         }
         return `${Math.floor(diffInHours)} hours ago`;
       }
-      
+
       // If less than 7 days ago, show day and time
-      if (diffInHours < 168) { // 7 days
-        return date.toLocaleDateString('en-US', { 
-          weekday: 'short', 
-          hour: 'numeric', 
+      if (diffInHours < 168) {
+        // 7 days
+        return date.toLocaleDateString('en-US', {
+          weekday: 'short',
+          hour: 'numeric',
           minute: '2-digit',
-          hour12: true 
+          hour12: true,
         });
       }
-      
+
       // Otherwise show full date and time
-      return date.toLocaleDateString('en-US', { 
+      return date.toLocaleDateString('en-US', {
         year: 'numeric',
-        month: 'short', 
+        month: 'short',
         day: 'numeric',
-        hour: 'numeric', 
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: true 
+        hour12: true,
       });
     } catch {
       return 'Invalid Date';
@@ -787,14 +977,15 @@ export class GroupDetailComponent implements OnInit {
     if (!imagePath) return '';
     if (imagePath.startsWith('http')) return imagePath;
     if (imagePath.startsWith('localhost:3000')) return `http://${imagePath}`;
-    if (imagePath.startsWith('/uploads')) return `http://localhost:3000${imagePath}`;
+    if (imagePath.startsWith('/uploads'))
+      return `http://localhost:3000${imagePath}`;
     return `http://localhost:3000/${imagePath.startsWith('uploads') ? imagePath : 'uploads/' + imagePath}`;
   }
 
   // Edit Group (Group Admin only)
   editGroup() {
     if (!this.canEditGroup || !this.group) return;
-    
+
     // Navigate to edit group page
     this.router.navigate(['/groups', this.group.id, 'edit']);
   }
@@ -802,11 +993,11 @@ export class GroupDetailComponent implements OnInit {
   // Delete Group (Group Admin only)
   deleteGroup() {
     if (!this.canDeleteGroup || !this.group) return;
-    
+
     const confirmDelete = confirm(
-      `Are you sure you want to delete the group "${this.group.title}"? This action cannot be undone.`
+      `Are you sure you want to delete the group "${this.group.title}"? This action cannot be undone.`,
     );
-    
+
     if (confirmDelete) {
       this.groupService.deleteGroup(this.group.id).subscribe({
         next: (response) => {
@@ -815,8 +1006,11 @@ export class GroupDetailComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error deleting group:', error);
-          alert('Failed to delete group: ' + (error.error?.message || 'Unknown error'));
-        }
+          alert(
+            'Failed to delete group: ' +
+              (error.error?.message || 'Unknown error'),
+          );
+        },
       });
     }
   }

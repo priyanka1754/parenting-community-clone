@@ -5,19 +5,22 @@ import { Router } from '@angular/router';
 import { CommunityService } from '../community.service';
 import { AuthService } from '../auth.service';
 import { Community } from '../models';
+import { BackHeaderComponent } from "../backNavigation/back-navigation.component";
+import { BottomNavComponent } from "../bottom-nav/bottom-nav.component";
 
 @Component({
   selector: 'app-community-list',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, BackHeaderComponent, BottomNavComponent],
   template: `
-    <div class="min-h-screen bg-gray-50 py-8">
+  <app-back-header [title]="'Communities'"></app-back-header>
+    <div class="min-h-screen bg-gray-50 py-8 pb-20 pt-20">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
           <div class="flex justify-between items-center">
             <div>
-              <h1 class="text-3xl font-bold text-gray-900">Communities</h1>
+              <!-- <h1 class="text-3xl font-bold text-gray-900">Communities</h1> -->
               <p class="mt-2 text-gray-600">Discover and join parenting communities</p>
             </div>
             <button 
@@ -146,6 +149,7 @@ import { Community } from '../models';
         </div>
       </div>
     </div>
+    <app-bottom-nav></app-bottom-nav>
   `,
   styles: [`
     .line-clamp-1 {
