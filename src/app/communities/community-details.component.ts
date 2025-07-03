@@ -27,6 +27,7 @@ import { BottomNavComponent } from "../bottom-nav/bottom-nav.component";
     class="text-sm text-white bg-green-600 hover:bg-green-700 px-4 py-2 rounded-md transition">
     Assign Expert
   </button>
+  {{isAdmin}}
 </div>
 
       <!-- Community Detail -->
