@@ -26,7 +26,7 @@ import { BackHeaderComponent } from "../backNavigation/back-navigation.component
       </div>
 
       <!-- Group Detail -->
-      <div *ngIf="!loading && group">
+      <div *ngIf="!loading && group" class="pt-20">
         <!-- Group Header -->
         <div class="bg-white shadow-sm">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
