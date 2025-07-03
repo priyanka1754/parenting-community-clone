@@ -129,12 +129,27 @@ export const routes: Routes = [
           ),
       },
       {
-        path:'expert-application-form',
+        path: 'expert-application-form',
         loadComponent: () =>
-          import('./expert-applications/expert-application-form.component').then(
-            (m) => m.ExpertApplicationFormComponent,
-          ),  
+          import(
+            './expert-applications/expert-application-form.component'
+          ).then((m) => m.ExpertApplicationFormComponent),
       },
+      {
+        path: 'expert-application-management/:communityId',
+        loadComponent: () =>
+          import(
+            './expert-applications/expert-applications-managment.component'
+          ).then((m) => m.ExpertApplicationsManagementComponent),
+      },
+      {
+        path: 'groups/:id/edit',
+        loadComponent: () =>
+          import('./groups/edit-group.component').then(
+            (m) => m.EditGroupComponent,
+          ),
+      },
+
       {
         path: '',
         redirectTo: 'home',

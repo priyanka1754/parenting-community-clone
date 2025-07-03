@@ -12,7 +12,7 @@ interface UploadFile {
   uploaded: boolean;
   error?: string;
   url?: string;
-  mediaType?: 'image' | 'video' | 'document';
+  mediaType?: 'image' | 'video' | 'document' | 'audio';
 }
 
 @Component({
@@ -34,7 +34,7 @@ interface UploadFile {
           #fileInput
           type="file"
           multiple
-          accept="image/*,video/*,.pdf,.txt"
+          accept="image/*,video/*,.pdf,.txt,audio/*"
           (change)="onFileSelect($event)"
           class="hidden">
         
@@ -71,6 +71,14 @@ interface UploadFile {
               class="preview-video"
               muted>
             </video>
+            
+            <!-- Audio Preview -->
+            <audio 
+              *ngIf="uploadFile.mediaType === 'audio' && uploadFile.preview"
+              [src]="uploadFile.preview"
+              controls
+              class="preview-audio">
+            </audio>
             
             <!-- Document Icon -->
             <div 
@@ -201,6 +209,10 @@ interface UploadFile {
 
     .preview-image, .preview-video {
       @apply w-full h-full object-cover;
+    }
+
+    .preview-audio {
+      @apply w-full h-full object-contain;
     }
 
     .document-icon {
@@ -339,16 +351,17 @@ export class MediaUploadComponent implements OnInit {
         return;
       }
 
+      const mediaType = this.groupPostService.getFileTypeCategory(file.type);
       const uploadFile: UploadFile = {
         file,
         uploading: false,
         progress: 0,
         uploaded: false,
-        mediaType: this.groupPostService.getFileTypeCategory(file.type)
+        mediaType
       };
 
-      // Generate preview for images and videos
-      if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
+      // Generate preview for images, videos, and audio
+      if (file.type.startsWith('image/') || file.type.startsWith('video/') || file.type.startsWith('audio/')) {
         const reader = new FileReader();
         reader.onload = (e) => {
           uploadFile.preview = e.target?.result as string;
@@ -427,6 +440,7 @@ export class MediaUploadComponent implements OnInit {
   getFileTypeLabel(mimeType: string): string {
     if (mimeType.startsWith('image/')) return 'Image';
     if (mimeType.startsWith('video/')) return 'Video';
+    if (mimeType.startsWith('audio/')) return 'Audio';
     if (mimeType === 'application/pdf') return 'PDF';
     if (mimeType === 'text/plain') return 'Text';
     return 'Document';
