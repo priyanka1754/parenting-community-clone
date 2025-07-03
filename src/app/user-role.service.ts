@@ -6,7 +6,7 @@ import { UserRole } from './shared/role-tag.component';
 export interface UserRoleResponse {
   _id: string;
   userId: string;
-  role: 'admin' | 'expert' | 'moderator' | 'user';
+  role: 'admin' | 'expert' | 'moderator' | 'group-admin' | 'user';
   communityId?: string;
   groupId?: string;
   permissions: string[];
@@ -122,22 +122,24 @@ export class UserRoleService {
 
   // Update user roles cache
   updateUserRolesCache(roles: UserRole[]) {
-    this.userRolesSubject.next(roles);
+    if (roles) {
+      this.userRolesSubject.next(roles);
+    }
   }
 
   // Convert API response to UserRole format
-  convertToUserRole(apiRole: UserRoleResponse): UserRole {
-    return {
-      role: apiRole.role,
-      communityId: apiRole.communityId,
-      groupId: apiRole.groupId,
-      expertiseAreas: apiRole.expertiseAreas,
-      verificationStatus: apiRole.verificationStatus
-    };
-  }
+ convertToUserRole(apiRole: UserRoleResponse): UserRole {
+  return {
+    role: apiRole.role === 'group-admin' ? 'groupAdmin' : apiRole.role,
+    communityId: apiRole.communityId,
+    groupId: apiRole.groupId,
+    expertiseAreas: apiRole.expertiseAreas,
+    verificationStatus: apiRole.verificationStatus
+  };
+}
 
   // Helper methods for role checking
-  hasRole(roles: UserRole[], targetRole: string, communityId?: string, groupId?: string): boolean {
+    hasRole(roles: UserRole[], targetRole: string, communityId?: string, groupId?: string): boolean {
     return roles.some(role => {
       if (role.role !== targetRole) return false;
       if (communityId && role.communityId !== communityId) return false;
@@ -182,9 +184,9 @@ export class UserRoleService {
       return true;
     });
 
-    // Priority order: admin > moderator > expert > user
-    const priorities = { admin: 4, moderator: 3, expert: 2, user: 1 };
-    
+    // Priority order: admin > moderator > group-admin > expert > user
+    const priorities = { admin: 5, moderator: 4, groupAdmin: 3, expert: 2, user: 1 };
+
     return relevantRoles.reduce((highest, current) => {
       if (!highest) return current;
       const currentPriority = priorities[current.role] || 0;
@@ -233,8 +235,8 @@ export class UserRoleService {
       case 'admin': return '👑';
       case 'expert': return role.verificationStatus === 'verified' ? '🎓' : '⏳';
       case 'moderator': return '🛡️';
+      case 'groupAdmin': return '⚡';
       default: return '';
     }
   }
 }
-
