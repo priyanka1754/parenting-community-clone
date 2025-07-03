@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 export interface UserRole {
-  role: 'admin' | 'expert' | 'moderator' | 'user';
+  role: 'admin' | 'expert' | 'moderator' | 'groupAdmin' | 'user';
   communityId?: string;
   groupId?: string;
   expertiseAreas?: string[];
@@ -86,49 +86,49 @@ export class RoleTagComponent {
 
   get isCommunityExpert(): boolean {
     if (!this.showCommunityRoles || !this.currentCommunityId) return false;
-    return this.userRoles.some(role => 
-      role.role === 'expert' && 
-      role.communityId === this.currentCommunityId
-    );
+    return this.userRoles.some(role => {
+      const communityId = role.communityId ? role.communityId.toString() : undefined;
+      return role.role === 'expert' && communityId === this.currentCommunityId;
+    });
   }
 
   get isCommunityModerator(): boolean {
     if (!this.showCommunityRoles || !this.currentCommunityId) return false;
-    return this.userRoles.some(role => 
-      role.role === 'moderator' && 
-      role.communityId === this.currentCommunityId
-    );
+    return this.userRoles.some(role => {
+      const communityId = role.communityId ? role.communityId.toString() : undefined;
+      return role.role === 'moderator' && communityId === this.currentCommunityId;
+    });
   }
 
   get isGroupAdmin(): boolean {
     if (!this.showGroupAdmin || !this.currentGroupId) return false;
-    return this.userRoles.some(role => 
-      role.role === 'admin' && 
-      role.groupId === this.currentGroupId
-    );
+    return this.userRoles.some(role => {
+      const groupId = role.groupId ? role.groupId.toString() : undefined;
+      return (role.role === 'groupAdmin' || role.role === 'admin') && groupId === this.currentGroupId;
+    });
   }
 
   get expertiseAreas(): string[] {
-    const expertRole = this.userRoles.find(role => 
-      role.role === 'expert' && 
-      role.communityId === this.currentCommunityId
-    );
+    const expertRole = this.userRoles.find(role => {
+      const communityId = role.communityId ? role.communityId.toString() : undefined;
+      return role.role === 'expert' && communityId === this.currentCommunityId;
+    });
     return expertRole?.expertiseAreas || [];
   }
 
   get isVerified(): boolean {
-    const expertRole = this.userRoles.find(role => 
-      role.role === 'expert' && 
-      role.communityId === this.currentCommunityId
-    );
+    const expertRole = this.userRoles.find(role => {
+      const communityId = role.communityId ? role.communityId.toString() : undefined;
+      return role.role === 'expert' && communityId === this.currentCommunityId;
+    });
     return expertRole?.verificationStatus === 'verified';
   }
 
   get isPending(): boolean {
-    const expertRole = this.userRoles.find(role => 
-      role.role === 'expert' && 
-      role.communityId === this.currentCommunityId
-    );
+    const expertRole = this.userRoles.find(role => {
+      const communityId = role.communityId ? role.communityId.toString() : undefined;
+      return role.role === 'expert' && communityId === this.currentCommunityId;
+    });
     return expertRole?.verificationStatus === 'pending';
   }
 
@@ -155,7 +155,7 @@ export class RoleTagComponent {
   `
 })
 export class SimpleRoleTagComponent {
-  @Input() role: 'admin' | 'expert' | 'moderator' | 'group-admin' | '' = '';
+  @Input() role: 'admin' | 'expert' | 'moderator' | 'groupAdmin' | '' = '';
   @Input() isVerified: boolean = true;
   @Input() expertiseCount: number = 0;
 
@@ -169,7 +169,7 @@ export class SimpleRoleTagComponent {
           : 'bg-yellow-100 text-yellow-800 border border-yellow-200';
       case 'moderator':
         return 'bg-green-100 text-green-800 border border-green-200';
-      case 'group-admin':
+      case 'groupAdmin':
         return 'bg-orange-100 text-orange-800 border border-orange-200';
       default:
         return 'bg-gray-100 text-gray-800 border border-gray-200';
@@ -181,7 +181,7 @@ export class SimpleRoleTagComponent {
       case 'admin': return '👑';
       case 'expert': return this.isVerified ? '🎓' : '⏳';
       case 'moderator': return '🛡️';
-      case 'group-admin': return '⚡';
+      case 'groupAdmin': return '⚡';
       default: return '';
     }
   }
@@ -193,7 +193,7 @@ export class SimpleRoleTagComponent {
         const baseText = this.isVerified ? 'Expert' : 'Expert (Pending)';
         return this.expertiseCount > 0 ? `${baseText} (${this.expertiseCount})` : baseText;
       case 'moderator': return 'Moderator';
-      case 'group-admin': return 'Group Admin';
+      case 'groupAdmin': return 'Group Admin';
       default: return '';
     }
   }
