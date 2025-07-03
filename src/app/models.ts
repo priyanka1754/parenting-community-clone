@@ -214,7 +214,7 @@ export interface GroupRule {
 
 export interface UserMembership {
   status: 'active' | 'pending' | 'banned' | 'left';
-  role: 'member' | 'moderator' | 'admin' | 'expert';
+  role: 'member' | 'moderator' |'groupAdmin' |'admin' | 'expert';
   joinedAt?: string;
 }
 
