@@ -344,9 +344,10 @@ export class CommunityDetailComponent implements OnInit {
     this.loading = true;
     this.communityService.getCommunityById(id).subscribe({
       next: (community: any) => {
-        this.community = community;
+        // Map _id to id for consistency
+        this.community = { ...community, id: community.id || community._id };
         this.loading = false;
-        console.log('Community loaded:', community); // Debug log
+        console.log('Community loaded:', this.community); // Debug log
       },
       error: (error: any) => {
         console.error('Error loading community:', error);
@@ -368,7 +369,9 @@ navigateToExpertManagement(communityId: string) {
     this.groupService.getGroupsByCommunity(communityId, params).subscribe({
       next: (response: any) => {
         // Handle both array response and object with groups property
-        this.groups = Array.isArray(response) ? response : (response.groups || response.data || []);
+        const groups = Array.isArray(response) ? response : (response.groups || response.data || []);
+        // Map _id to id for each group for consistency
+        this.groups = groups.map((g: any) => ({ ...g, id: g.id || g._id }));
         this.groupsLoading = false;
         console.log('Groups loaded:', this.groups); // Debug log
       },
