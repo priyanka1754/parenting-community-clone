@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -82,22 +82,23 @@ import { BackHeaderComponent } from "../backNavigation/back-navigation.component
                   </div>
 
                   <!-- Join/Leave Button -->
-                  <div
-                    *ngIf="isLoggedIn && !isGroupMember && !isPlatformAdmin"
-                    class="flex gap-2"
-                  >
+                  <div *ngIf="isLoggedIn && !isGroupMember && !isPlatformAdmin" class="flex gap-2">
                     <button
+                      *ngIf="group.type === 'Private' && !isJoinRequestPending"
                       (click)="joinGroup()"
                       [disabled]="joiningGroup"
                       class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                     >
-                      {{
-                        joiningGroup
-                          ? 'Joining...'
-                          : group.type === 'Private'
-                            ? 'Request to Join'
-                            : 'Join Group'
-                      }}
+                      {{ joiningGroup ? 'Requesting...' : 'Request to Join' }}
+                    </button>
+                    <span *ngIf="group.type === 'Private' && isJoinRequestPending" class="text-gray-500 px-4 py-2">Request Pending</span>
+                    <button
+                      *ngIf="group.type !== 'Private'"
+                      (click)="joinGroup()"
+                      [disabled]="joiningGroup"
+                      class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {{ joiningGroup ? 'Joining...' : 'Join Group' }}
                     </button>
                   </div>
 
@@ -146,7 +147,28 @@ import { BackHeaderComponent } from "../backNavigation/back-navigation.component
                     </button>
                   </div>
                 </div>
-
+<!-- Pending Join Requests (Admin only) -->
+          <div *ngIf="isGroupAdmin" class="mt-6">
+            <div class="bg-white rounded-lg shadow border border-blue-200 p-4 max-w-xl mx-auto">
+              <h3 class="text-lg font-semibold mb-4 text-blue-700 flex items-center gap-2">
+                <span class="inline-block bg-blue-100 text-blue-700 rounded-full px-2 py-1 text-xs">Admin</span>
+                Pending Join Requests
+              </h3>
+              <div *ngIf="loadingJoinRequests" class="text-blue-500 py-2">Loading join requests...</div>
+              <div *ngIf="!loadingJoinRequests && joinRequests.length === 0" class="text-gray-500 py-2">No pending requests.</div>
+              <div *ngIf="!loadingJoinRequests && joinRequests.length > 0" class="space-y-3">
+                <div *ngFor="let req of joinRequests" class="flex items-center gap-4 bg-blue-50 p-3 rounded shadow-sm">
+                  <img [src]="req.userId.avatar || '/assets/user-img.png'" class="w-10 h-10 rounded-full border border-blue-200" />
+                  <div class="flex-1">
+                    <div class="font-medium text-blue-900">{{ req.userId.name }}</div>
+                    <div class="text-xs text-gray-500">{{ req.userId.email }}</div>
+                  </div>
+                  <button (click)="acceptJoinRequest(req._id)" class="bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Accept</button>
+                  <button (click)="rejectJoinRequest(req._id)" class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">Reject</button>
+                </div>
+              </div>
+            </div>
+          </div>
                 <!-- Stats -->
                 <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
                   <div class="text-center p-3 bg-gray-50 rounded-lg">
@@ -182,7 +204,7 @@ import { BackHeaderComponent } from "../backNavigation/back-navigation.component
             <nav class="flex space-x-8">
               <button
                 *ngFor="let tab of tabs"
-                (click)="activeTab = tab.id"
+                (click)="setActiveTab(tab.id)"
                 [class]="
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
@@ -317,7 +339,8 @@ import { BackHeaderComponent } from "../backNavigation/back-navigation.component
                         <!-- Role Tags -->
                         <app-role-tag
                           *ngIf="post.authorId?.roles"
-                           [userRoles]="post.authorId.roles ?? []"
+                          [backendRoles]="post.authorId.roles ?? []"
+                          [userRoles]="[]"
                           [currentCommunityId]="group.communityId.id"
                           [currentGroupId]="group.id"
                         >
@@ -373,6 +396,22 @@ import { BackHeaderComponent } from "../backNavigation/back-navigation.component
                         controls
                         class="w-full h-32 object-cover rounded-lg"
                       ></video>
+                      <audio
+                        *ngIf="media.mediaType === 'audio'"
+                        [src]="getFullImageUrl(media.url)"
+                        controls
+                        class="w-full"
+                      ></audio>
+                      <a
+                        *ngIf="media.mediaType === 'document'"
+                        [href]="getFullImageUrl(media.url)"
+                        target="_blank"
+                        class="block text-blue-600 underline mt-2"
+                      >
+                        <span *ngIf="media.mimeType === 'application/pdf'">📄 PDF</span>
+                        <span *ngIf="media.mimeType === 'text/plain'">📄 Text</span>
+                        Download/View
+                      </a>
                     </div>
                   </div>
 
@@ -533,8 +572,17 @@ import { BackHeaderComponent } from "../backNavigation/back-navigation.component
               <h3 class="text-lg font-semibold text-gray-900 mb-4">
                 Group Members
               </h3>
-              <!-- Members list would go here -->
-              <p class="text-gray-600">Members list coming soon...</p>
+              <div *ngIf="loadingMembers" class="text-blue-500 py-2">Loading members...</div>
+              <div *ngIf="!loadingMembers && groupMembers.length === 0" class="text-gray-500 py-2">No members found.</div>
+              <div *ngIf="!loadingMembers && groupMembers.length > 0" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <div *ngFor="let member of groupMembers" class="flex items-center gap-4 bg-gray-50 p-3 rounded shadow-sm">
+                  <img [src]="member.userId.avatar || '/assets/user-img.png'" class="w-12 h-12 rounded-full border border-blue-200" />
+                  <div>
+                    <div class="font-medium text-blue-900">{{ member.userId.name }}</div>
+                    <div class="text-xs text-gray-500">{{ member.userId.bio || '' }}</div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -584,6 +632,9 @@ export class GroupDetailComponent implements OnInit {
   currentUser: any = null;
   joiningGroup = false;
   creatingPost = false;
+  joinRequestPending = false;
+  joinRequests: any[] = [];
+  loadingJoinRequests = false;
 
   // Media upload properties
   uploadedMediaUrls: any[] = [];
@@ -607,6 +658,12 @@ export class GroupDetailComponent implements OnInit {
   totalPosts: number | undefined;
   totalPages: number | undefined;
 
+  // Group members
+  groupMembers: any[] = [];
+  loadingMembers = false;
+
+  @ViewChild(MediaUploadComponent) mediaUploadComponent?: MediaUploadComponent;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -622,6 +679,10 @@ export class GroupDetailComponent implements OnInit {
         this.loadGroup(params['id']);
       }
     });
+    // If admin, load join requests
+    // if (this.isGroupAdmin) {
+    //   this.loadJoinRequests();
+    // }
   }
 
   checkUserStatus() {
@@ -638,7 +699,11 @@ export class GroupDetailComponent implements OnInit {
   }
 
   get isGroupAdmin(): boolean {
-    return this.isGroupCreator || this.currentUser?.role === 'admin';
+    // Only group creator or group admin (not platform admin, not moderator)
+    return (
+      this.isGroupCreator ||
+      this.group?.userMembership?.role === 'admin'
+    );
   }
 
   get canEditGroup(): boolean {
@@ -658,6 +723,21 @@ export class GroupDetailComponent implements OnInit {
       role === 'moderator'
     );
   }
+    leaveGroup() {
+    if (!this.group || !confirm('Are you sure you want to leave this group?')) return;
+    this.groupService.leaveGroup(this.group.id).subscribe({
+      next: (response: { message: any }) => {
+        alert(response.message);
+        if (this.group) {
+          this.loadGroup(this.group.id); // Reload to get updated membership status
+        }
+      },
+      error: (error: any) => {
+        console.error('Error leaving group:', error);
+        alert('Failed to leave group');
+      },
+    });
+  }
 
   get shouldShowLeaveButton(): boolean {
     const role = this.group?.userMembership?.role;
@@ -676,11 +756,19 @@ export class GroupDetailComponent implements OnInit {
     return this.currentUser?.role === 'admin';
   }
 
+  get isJoinRequestPending(): boolean {
+    return (
+      this.group?.userMembership?.status === 'pending' || this.joinRequestPending
+    );
+  }
+
   loadGroup(id: string) {
     this.loading = true;
     this.groupService.getGroupById(id).subscribe({
       next: (group: Group | null) => {
         this.group = group;
+        this.checkUserStatus(); // Ensure currentUser is up-to-date after group loads
+        this.joinRequests = []; // Clear join requests on group change
         console.log('Loaded group:', group);
         console.log('UserMembership:', group?.userMembership);
         console.log('CurrentUser:', this.currentUser);
@@ -689,6 +777,10 @@ export class GroupDetailComponent implements OnInit {
         // Load posts after group is loaded
         if (this.group) {
           this.loadPosts();
+          // Load join requests only if group admin (not platform admin, not moderator)
+          if (this.isGroupAdmin && this.currentUser) {
+            this.loadJoinRequests();
+          }
         }
       },
 
@@ -762,41 +854,113 @@ export class GroupDetailComponent implements OnInit {
 
   joinGroup() {
     if (!this.group) return;
-
     this.joiningGroup = true;
-    this.groupService.joinGroup(this.group.id).subscribe({
-      next: (response: { message: any }) => {
-        alert(response.message);
-        this.loadGroup(this.group!.id); // Reload to get updated membership status
+    this.groupService.requestToJoinGroup(this.group.id).subscribe({
+      next: (response: any) => {
+        if (response.status === 'pending') {
+          this.joinRequestPending = true;
+        }
+        if (this.group) {
+          this.loadGroup(this.group.id);
+        }
         this.joiningGroup = false;
       },
       error: (error: any) => {
-        console.error('Error joining group:', error);
-        alert('Failed to join group');
+        alert(error.error?.error || 'Failed to request to join group');
         this.joiningGroup = false;
       },
     });
   }
 
-  leaveGroup() {
-    if (!this.group || !confirm('Are you sure you want to leave this group?'))
-      return;
-
-    this.groupService.leaveGroup(this.group.id).subscribe({
-      next: (response: { message: any }) => {
-        alert(response.message);
-        this.loadGroup(this.group!.id); // Reload to get updated membership status
+  loadJoinRequests() {
+    if (!this.group || !this.currentUser) return;
+    this.loadingJoinRequests = true;
+    this.groupService.getPendingJoinRequests(this.group.id).subscribe({
+      next: (requests: any[]) => {
+        console.log('Join requests response:', requests);
+        this.joinRequests = requests;
+        this.loadingJoinRequests = false;
       },
-      error: (error: any) => {
-        console.error('Error leaving group:', error);
-        alert('Failed to leave group');
+      error: (err: any) => {
+        console.error('Error loading join requests:', err);
+        this.loadingJoinRequests = false;
       },
     });
   }
 
+  acceptJoinRequest(membershipId: string) {
+    if (!this.group) return;
+    this.groupService.acceptJoinRequest(this.group.id, membershipId).subscribe({
+      next: () => {
+        this.loadJoinRequests();
+        if (this.group) {
+          this.loadGroup(this.group.id);
+        }
+      },
+      error: () => {
+        alert('Failed to accept join request');
+      },
+    });
+  }
+
+  rejectJoinRequest(membershipId: string) {
+    if (!this.group) return;
+    this.groupService.rejectJoinRequest(this.group.id, membershipId).subscribe({
+      next: () => {
+        this.loadJoinRequests();
+      },
+      error: () => {
+        alert('Failed to reject join request');
+      },
+    });
+  }
+
+  // Media upload event handlers
+  onMediaUploaded(uploadedFiles: any[]) {
+    this.uploadedMediaUrls = uploadedFiles;
+    console.log('Media uploaded:', uploadedFiles);
+  }
+
+  onUploadProgress(progress: { file: string; progress: number }) {
+    this.uploadProgress[progress.file] = progress.progress;
+    console.log('Upload progress:', progress);
+  }
+
+  // Edit Group (Group Admin only)
+  editGroup() {
+    if (!this.canEditGroup || !this.group) return;
+
+    // Navigate to edit group page
+    this.router.navigate(['/groups', this.group.id, 'edit']);
+  }
+
+  // Delete Group (Group Admin only)
+  deleteGroup() {
+    if (!this.canDeleteGroup || !this.group) return;
+
+    const confirmDelete = confirm(
+      `Are you sure you want to delete the group "${this.group.title}"? This action cannot be undone.`,
+    );
+
+    if (confirmDelete) {
+      this.groupService.deleteGroup(this.group.id).subscribe({
+        next: (response) => {
+          alert('Group deleted successfully');
+          this.router.navigate(['/communities', this.group?.communityId]);
+        },
+        error: (error) => {
+          console.error('Error deleting group:', error);
+          alert(
+            'Failed to delete group: ' +
+              (error.error?.message || 'Unknown error'),
+          );
+        },
+      });
+    }
+  }
+
+  // Post creation
   createPost() {
-    if (!this.group || !this.newPostContent.trim()) return;
-
     this.creatingPost = true;
     const postData = {
       content: this.newPostContent,
@@ -805,13 +969,17 @@ export class GroupDetailComponent implements OnInit {
       mediaUrls: this.uploadedMediaUrls, // Include uploaded media
     };
 
-    this.groupPostService.createPost(this.group.id, postData).subscribe({
+    this.groupPostService.createPost(this.group!.id, postData).subscribe({
       next: (post: any) => {
         this.newPostContent = '';
         this.newPostType = 'general';
         this.newPostUrgency = 'low';
-        this.uploadedMediaUrls = []; // Clear uploaded media
-        this.loadPosts(); // Reload posts
+        this.uploadedMediaUrls = [];
+        // Clear media upload component if available
+        if (this.mediaUploadComponent) {
+          this.mediaUploadComponent.clearAllFiles();
+        }
+        this.loadPosts();
         this.creatingPost = false;
       },
       error: (error: any) => {
@@ -982,47 +1150,25 @@ export class GroupDetailComponent implements OnInit {
     return `http://localhost:3000/${imagePath.startsWith('uploads') ? imagePath : 'uploads/' + imagePath}`;
   }
 
-  // Edit Group (Group Admin only)
-  editGroup() {
-    if (!this.canEditGroup || !this.group) return;
-
-    // Navigate to edit group page
-    this.router.navigate(['/groups', this.group.id, 'edit']);
-  }
-
-  // Delete Group (Group Admin only)
-  deleteGroup() {
-    if (!this.canDeleteGroup || !this.group) return;
-
-    const confirmDelete = confirm(
-      `Are you sure you want to delete the group "${this.group.title}"? This action cannot be undone.`,
-    );
-
-    if (confirmDelete) {
-      this.groupService.deleteGroup(this.group.id).subscribe({
-        next: (response) => {
-          alert('Group deleted successfully');
-          this.router.navigate(['/communities', this.group?.communityId]);
-        },
-        error: (error) => {
-          console.error('Error deleting group:', error);
-          alert(
-            'Failed to delete group: ' +
-              (error.error?.message || 'Unknown error'),
-          );
-        },
-      });
+  setActiveTab(tabId: string) {
+    this.activeTab = tabId;
+    if (tabId === 'members') {
+      this.loadGroupMembers();
     }
   }
 
-  // Media upload event handlers
-  onMediaUploaded(uploadedFiles: any[]) {
-    this.uploadedMediaUrls = uploadedFiles;
-    console.log('Media uploaded:', uploadedFiles);
-  }
-
-  onUploadProgress(progress: { file: string; progress: number }) {
-    this.uploadProgress[progress.file] = progress.progress;
-    console.log('Upload progress:', progress);
+  loadGroupMembers() {
+    if (!this.group) return;
+    this.loadingMembers = true;
+    this.groupService.getGroupMembers(this.group.id).subscribe({
+      next: (members: any[]) => {
+        this.groupMembers = members;
+        this.loadingMembers = false;
+      },
+      error: (err: any) => {
+        this.groupMembers = [];
+        this.loadingMembers = false;
+      },
+    });
   }
 }

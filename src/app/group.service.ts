@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { Group, GroupData, GroupMembership, UploadResponse } from './models';
 
 @Injectable({
@@ -91,7 +91,9 @@ export class GroupService {
         }
       });
     }
-    return this.http.get<GroupMembership[]>(`${this.apiUrl}/${groupId}/members`, { params: httpParams });
+    return this.http
+      .get<{ members: GroupMembership[] }>(`${this.apiUrl}/${groupId}/members`, { params: httpParams })
+      .pipe(map(res => res.members));
   }
 
   // Join request management (Admin/Moderator only)
@@ -99,18 +101,25 @@ export class GroupService {
     return this.http.get<GroupMembership[]>(`${this.apiUrl}/${groupId}/pending-requests`);
   }
 
-  approveJoinRequest(groupId: string, userId: string): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(
-      `${this.apiUrl}/${groupId}/approve-request`,
-      { userId }
-    );
+
+  // The following methods are for the new join request endpoints (RESTful, membershipId-based)
+  // Use these for the new group join request UI
+
+
+  requestToJoinGroup(groupId: string) {
+    return this.http.post(`${this.apiUrl}/${groupId}/join`, {});
   }
 
-  rejectJoinRequest(groupId: string, userId: string): Observable<{ success: boolean; message: string }> {
-    return this.http.post<{ success: boolean; message: string }>(
-      `${this.apiUrl}/${groupId}/reject-request`,
-      { userId }
-    );
+  getPendingJoinRequests(groupId: string) {
+    return this.http.get<any[]>(`${this.apiUrl}/${groupId}/join-requests`);
+  }
+
+  acceptJoinRequest(groupId: string, membershipId: string) {
+    return this.http.post(`${this.apiUrl}/${groupId}/join-requests/${membershipId}/accept`, {});
+  }
+
+  rejectJoinRequest(groupId: string, membershipId: string) {
+    return this.http.post(`${this.apiUrl}/${groupId}/join-requests/${membershipId}/reject`, {});
   }
 
   // Group rules management (Admin only)

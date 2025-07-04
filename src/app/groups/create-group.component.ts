@@ -190,35 +190,22 @@ import { BackHeaderComponent } from "../backNavigation/back-navigation.component
               </div>
             </div>
 
-            <!-- Guidelines Section -->
+            <!-- Group Rules Section -->
             <div class="mt-8 space-y-6">
               <h2 class="text-xl font-semibold text-gray-900 border-b border-gray-200 pb-2">
-                Group Guidelines
+                Group Rules
               </h2>
-              
-              <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                <h3 class="font-medium text-green-900 mb-2">Group Creation Guidelines:</h3>
-                <ul class="text-sm text-green-800 space-y-1">
-                  <li>• <strong>Public Groups:</strong> Anyone can join and see content</li>
-                  <li>• <strong>Private Groups:</strong> Anyone can request to join, but admins must approve</li>
-                  <li>• <strong>Secret Groups:</strong> Only invited members can see and join the group</li>
-                  <li>• You will automatically become the group admin</li>
-                  <li>• You can add rules and assign moderators after creation</li>
-                  <li>• All content must follow community guidelines</li>
-                </ul>
+              <div *ngFor="let rule of rules; let i = index" class="mb-4 border border-gray-200 rounded-lg p-4 bg-gray-50">
+                <div class="flex items-center justify-between mb-2">
+                  <span class="font-semibold text-gray-800">Rule {{ i + 1 }}</span>
+                  <button type="button" (click)="removeRule(i)" class="text-red-600 hover:underline text-xs">Remove</button>
+                </div>
+                <input type="text" [(ngModel)]="rule.title" name="ruleTitle{{i}}" placeholder="Rule Title" maxlength="100" class="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md" required>
+                <textarea [(ngModel)]="rule.description" name="ruleDesc{{i}}" placeholder="Rule Description" maxlength="500" rows="2" class="w-full px-3 py-2 border border-gray-300 rounded-md" required></textarea>
               </div>
-
-              <!-- Privacy Notice -->
-              <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                <h3 class="font-medium text-yellow-900 mb-2">Privacy & Safety:</h3>
-                <ul class="text-sm text-yellow-800 space-y-1">
-                  <li>• Groups discussing children should prioritize privacy and safety</li>
-                  <li>• Consider using Private or Secret groups for sensitive topics</li>
-                  <li>• Establish clear rules about sharing personal information</li>
-                  <li>• Report any inappropriate content or behavior</li>
-                </ul>
-              </div>
+              <button type="button" (click)="addRule()" class="bg-blue-100 text-blue-700 px-4 py-2 rounded hover:bg-blue-200">+ Add Rule</button>
             </div>
+            <!-- ...existing code... -->
 
             <!-- Form Actions -->
             <div class="mt-8 flex items-center justify-between pt-6 border-t border-gray-200">
@@ -403,10 +390,22 @@ export class CreateGroupComponent implements OnInit {
     this.groupData.image = '';
   }
 
+  rules: { title: string; description: string }[] = [];
+
+  addRule() {
+    this.rules.push({ title: '', description: '' });
+  }
+
+  removeRule(index: number) {
+    this.rules.splice(index, 1);
+  }
+
   onSubmit() {
     if (this.creating) return;
     this.creating = true;
     this.errorMessage = '';
+    // Attach rules to groupData
+    (this.groupData as any).rules = this.rules.filter(r => r.title.trim() && r.description.trim());
     this.groupService.createGroup(this.groupData).subscribe({
       next: (group) => {
         this.creating = false;

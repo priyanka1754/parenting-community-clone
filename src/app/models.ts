@@ -1,3 +1,5 @@
+import { BackendRole } from "./shared/role-tag.component";
+
 export interface User {
   id: string; // MongoDB _id (use this everywhere for backend API calls)
   userId: string; // Custom userId (legacy, do not use for backend calls)
@@ -13,7 +15,7 @@ export interface User {
   following?: any[];
   createdAt?: string;
   updatedAt?: string;
-  roles?: UserRole[];
+  roles?: BackendRole[];
 }
 
 // Add to models.ts
@@ -225,6 +227,7 @@ export interface GroupData {
   category: string;
   type: 'Public' | 'Private' | 'Secret';
   communityId: string;
+  rules?: { title: string; description: string }[];
 }
 
 export interface GroupMembership {
@@ -276,8 +279,9 @@ export interface GroupPost {
 }
 
 export interface MediaUrl {
+mimeType: any;
   url: string;
-  mediaType: 'image' | 'video';
+  mediaType: 'image' | 'video' | 'audio' | 'document';
 }
 
 export interface PostLike {

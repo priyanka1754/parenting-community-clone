@@ -94,6 +94,7 @@ export class GroupPostService {
     const allowedTypes = [
       'image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif',
       'video/mp4', 'video/webm', 'video/avi', 'video/mov',
+      'audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/x-wav', 'audio/x-m4a', 'audio/aac',
       'application/pdf', 'text/plain'
     ];
 
@@ -109,9 +110,10 @@ export class GroupPostService {
   }
 
   // Get file type category
-  getFileTypeCategory(mimeType: string): 'image' | 'video' | 'document' {
+  getFileTypeCategory(mimeType: string): 'image' | 'video' | 'audio' | 'document' {
     if (mimeType.startsWith('image/')) return 'image';
     if (mimeType.startsWith('video/')) return 'video';
+    if (mimeType.startsWith('audio/')) return 'audio';
     return 'document';
   }
 

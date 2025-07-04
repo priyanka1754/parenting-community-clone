@@ -142,6 +142,13 @@ export const routes: Routes = [
             './expert-applications/expert-applications-managment.component'
           ).then((m) => m.ExpertApplicationsManagementComponent),
       },
+      {
+        path: 'groups/:id/edit',
+        loadComponent: () =>
+          import('./groups/edit-group.component').then(
+            (m) => m.EditGroupComponent,
+          ),
+      },
 
       {
         path: '',
